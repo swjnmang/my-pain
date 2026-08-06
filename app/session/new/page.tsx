@@ -4,8 +4,15 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import RequireAuth from '@/components/RequireAuth';
 import AppShell from '@/components/AppShell';
+import ExerciseSetEditor from '@/components/ExerciseSetEditor';
 import { useAuth } from '@/lib/AuthContext';
-import { getExercises, getWorkoutTemplate, getUserWorkout, createSession } from '@/lib/data';
+import {
+  getExercises,
+  getWorkoutTemplate,
+  getUserWorkout,
+  createSession,
+  deletePlannedTraining,
+} from '@/lib/data';
 import { Exercise, ExerciseLog, PreSurvey, Category, WeightRepsSet, TimeSet } from '@/lib/types';
 
 type Step = 'survey' | 'log';
@@ -16,6 +23,8 @@ function SessionInner() {
   const params = useSearchParams();
   const type = params.get('type'); // 'template' | 'workout'
   const id = params.get('id');
+  const dateParam = params.get('date'); // optional: YYYY-MM-DD, sonst heute
+  const planId = params.get('planId'); // optional: geplante Trainingseinheit, die bei Abschluss gelöscht wird
 
   const [step, setStep] = useState<Step>('survey');
   const [sourceName, setSourceName] = useState('');
@@ -61,22 +70,6 @@ function SessionInner() {
       .finally(() => setLoading(false));
   }, [user, type, id]);
 
-  function addSet(exercise: Exercise) {
-    setLogs((prev) => {
-      const sets = prev[exercise.id] ?? [];
-      const newSet = exercise.logType === 'time' ? { durationSec: 0 } : { weight: 0, reps: 0 };
-      return { ...prev, [exercise.id]: [...sets, newSet] as WeightRepsSet[] | TimeSet[] };
-    });
-  }
-
-  function updateSet(exercise: Exercise, index: number, field: string, value: number) {
-    setLogs((prev) => {
-      const sets = [...(prev[exercise.id] ?? [])] as unknown as Record<string, number>[];
-      sets[index] = { ...sets[index], [field]: value };
-      return { ...prev, [exercise.id]: sets as unknown as WeightRepsSet[] | TimeSet[] };
-    });
-  }
-
   async function finishSession() {
     if (!user) return;
     setSaving(true);
@@ -92,11 +85,14 @@ function SessionInner() {
         sourceId: id!,
         sourceName,
         category,
-        date: new Date().toISOString().slice(0, 10),
+        date: dateParam || new Date().toISOString().slice(0, 10),
         preSurvey: survey,
         exerciseLogs,
         createdAt: Date.now(),
       });
+      if (planId) {
+        await deletePlannedTraining(user.uid, planId);
+      }
       router.replace('/history');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Speichern fehlgeschlagen.');
@@ -175,51 +171,13 @@ function SessionInner() {
       {!loading && step === 'log' && (
         <div className="space-y-6 pb-24">
           {exercises.map((ex) => (
-            <div key={ex.id} className="rounded-lg border border-neutral-200 p-4">
-              <p className="mb-3 font-medium">{ex.name}</p>
-              <div className="space-y-2">
-                {(logs[ex.id] ?? []).map((set, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <span className="w-6 text-sm text-neutral-400">{i + 1}.</span>
-                    {ex.logType === 'time' ? (
-                      <input
-                        type="number"
-                        min={0}
-                        placeholder="Sekunden"
-                        value={(set as TimeSet).durationSec || ''}
-                        onChange={(e) => updateSet(ex, i, 'durationSec', Number(e.target.value))}
-                        className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-base"
-                      />
-                    ) : (
-                      <>
-                        <input
-                          type="number"
-                          min={0}
-                          placeholder="kg"
-                          value={(set as WeightRepsSet).weight || ''}
-                          onChange={(e) => updateSet(ex, i, 'weight', Number(e.target.value))}
-                          className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-base"
-                        />
-                        <input
-                          type="number"
-                          min={0}
-                          placeholder="Wdh."
-                          value={(set as WeightRepsSet).reps || ''}
-                          onChange={(e) => updateSet(ex, i, 'reps', Number(e.target.value))}
-                          className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-base"
-                        />
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <button
-                onClick={() => addSet(ex)}
-                className="mt-3 text-sm text-neutral-500 underline"
-              >
-                + Satz hinzufügen
-              </button>
-            </div>
+            <ExerciseSetEditor
+              key={ex.id}
+              name={ex.name}
+              logType={ex.logType}
+              sets={logs[ex.id] ?? []}
+              onChange={(sets) => setLogs((prev) => ({ ...prev, [ex.id]: sets }))}
+            />
           ))}
 
           <div className="fixed inset-x-0 bottom-16 border-t border-neutral-200 bg-white p-4">

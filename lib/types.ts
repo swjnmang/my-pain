@@ -58,6 +58,16 @@ export interface Session {
   createdAt: number;
 }
 
+export interface PlannedTraining {
+  id: string;
+  date: string; // ISO date YYYY-MM-DD
+  sourceType: 'template' | 'workout';
+  sourceId: string;
+  sourceName: string;
+  category: Category;
+  createdAt: number;
+}
+
 export const CATEGORY_LABELS: Record<Category, string> = {
   oberkoerper: 'Oberkörper',
   unterkoerper: 'Unterkörper',

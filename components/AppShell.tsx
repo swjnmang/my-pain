@@ -8,6 +8,7 @@ import clsx from 'clsx';
 const NAV_ITEMS = [
   { href: '/', label: 'Home' },
   { href: '/training', label: 'Training' },
+  { href: '/calendar', label: 'Kalender' },
   { href: '/history', label: 'Verlauf' },
 ];
 
