@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import clsx from 'clsx';
 import RequireAuth from '@/components/RequireAuth';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/AuthContext';
-import { getExercises, createUserWorkout } from '@/lib/data';
+import { getAllExercisesForUser, createUserWorkout } from '@/lib/data';
 import { Category, CATEGORY_LABELS, Exercise } from '@/lib/types';
 
 const CATEGORIES: Category[] = ['oberkoerper', 'unterkoerper', 'ganzkoerper'];
@@ -23,11 +24,12 @@ function BuilderInner() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getExercises()
+    if (!user) return;
+    getAllExercisesForUser(user.uid)
       .then(setExercises)
       .catch((err) => setError(err instanceof Error ? err.message : 'Fehler beim Laden.'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [user]);
 
   function toggleExercise(id: string) {
     setSelected((prev) => {
@@ -91,6 +93,13 @@ function BuilderInner() {
 
       {loading && <p className="text-sm text-neutral-500">Lädt…</p>}
       {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
+
+      <Link
+        href="/exercises/new"
+        className="mb-4 block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-600"
+      >
+        + Eigene Übung anlegen
+      </Link>
 
       <div className="mb-24 space-y-2">
         {visibleExercises.map((ex) => (

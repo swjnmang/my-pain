@@ -7,9 +7,10 @@ import AppShell from '@/components/AppShell';
 import ExerciseSetEditor from '@/components/ExerciseSetEditor';
 import { useAuth } from '@/lib/AuthContext';
 import {
-  getExercises,
+  getAllExercisesForUser,
   getWorkoutTemplate,
   getUserWorkout,
+  getSessions,
   createSession,
   deletePlannedTraining,
 } from '@/lib/data';
@@ -42,11 +43,15 @@ function SessionInner() {
   });
 
   const [logs, setLogs] = useState<Record<string, WeightRepsSet[] | TimeSet[]>>({});
+  const [previousLogs, setPreviousLogs] = useState<Record<string, WeightRepsSet[] | TimeSet[]>>({});
 
   useEffect(() => {
     if (!user || !type || !id) return;
     async function load() {
-      const allExercises = await getExercises();
+      const [allExercises, pastSessions] = await Promise.all([
+        getAllExercisesForUser(user!.uid),
+        getSessions(user!.uid),
+      ]);
       const source =
         type === 'template' ? await getWorkoutTemplate(id!) : await getUserWorkout(user!.uid, id!);
       if (!source) {
@@ -59,11 +64,23 @@ function SessionInner() {
         .map((exId) => allExercises.find((e) => e.id === exId))
         .filter((e): e is Exercise => Boolean(e));
       setExercises(sourceExercises);
+
       const initialLogs: Record<string, WeightRepsSet[] | TimeSet[]> = {};
+      const previous: Record<string, WeightRepsSet[] | TimeSet[]> = {};
       for (const ex of sourceExercises) {
-        initialLogs[ex.id] = ex.logType === 'time' ? [{ durationSec: 0 }] : [{ weight: 0, reps: 0 }];
+        const priorSession = pastSessions.find((s) =>
+          s.exerciseLogs.some((l) => l.exerciseId === ex.id && l.sets.length > 0)
+        );
+        const priorLog = priorSession?.exerciseLogs.find((l) => l.exerciseId === ex.id);
+        if (priorLog && priorLog.sets.length > 0) {
+          previous[ex.id] = priorLog.sets;
+          initialLogs[ex.id] = priorLog.sets.map((s) => ({ ...s })) as WeightRepsSet[] | TimeSet[];
+        } else {
+          initialLogs[ex.id] = ex.logType === 'time' ? [{ durationSec: 0 }] : [{ weight: 0, reps: 0 }];
+        }
       }
       setLogs(initialLogs);
+      setPreviousLogs(previous);
     }
     load()
       .catch((err) => setError(err instanceof Error ? err.message : 'Fehler beim Laden.'))
@@ -177,6 +194,9 @@ function SessionInner() {
               logType={ex.logType}
               sets={logs[ex.id] ?? []}
               onChange={(sets) => setLogs((prev) => ({ ...prev, [ex.id]: sets }))}
+              videoUrl={ex.videoUrl}
+              images={ex.images}
+              previousSets={previousLogs[ex.id]}
             />
           ))}
 

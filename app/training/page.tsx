@@ -51,6 +51,13 @@ function TrainingListInner() {
       </div>
 
       <Link
+        href="/generator"
+        className="mb-2 block rounded-lg bg-neutral-900 px-4 py-3 text-center text-sm font-medium text-white"
+      >
+        Training nach Schmerzbereich
+      </Link>
+
+      <Link
         href="/training/builder"
         className="mb-6 block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-600"
       >

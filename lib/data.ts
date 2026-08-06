@@ -22,6 +22,21 @@ export async function getExercises(): Promise<Exercise[]> {
   return snap.docs.map((d) => d.data() as Exercise);
 }
 
+export async function getUserExercises(uid: string): Promise<Exercise[]> {
+  const snap = await getDocs(collection(requireDb(), 'users', uid, 'exercises'));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Exercise);
+}
+
+export async function createUserExercise(uid: string, exercise: Omit<Exercise, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(requireDb(), 'users', uid, 'exercises'), exercise);
+  return ref.id;
+}
+
+export async function getAllExercisesForUser(uid: string): Promise<Exercise[]> {
+  const [global, own] = await Promise.all([getExercises(), getUserExercises(uid)]);
+  return [...global, ...own];
+}
+
 export async function getWorkoutTemplates(): Promise<WorkoutTemplate[]> {
   const snap = await getDocs(collection(requireDb(), 'workoutTemplates'));
   return snap.docs.map((d) => d.data() as WorkoutTemplate);

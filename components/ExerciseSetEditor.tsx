@@ -7,9 +7,27 @@ interface Props {
   logType: LogType;
   sets: WeightRepsSet[] | TimeSet[];
   onChange: (sets: WeightRepsSet[] | TimeSet[]) => void;
+  videoUrl?: string;
+  images?: string[];
+  previousSets?: WeightRepsSet[] | TimeSet[];
 }
 
-export default function ExerciseSetEditor({ name, logType, sets, onChange }: Props) {
+function formatSets(logType: LogType, sets: WeightRepsSet[] | TimeSet[]): string {
+  if (logType === 'time') {
+    return (sets as TimeSet[]).map((s) => `${s.durationSec}s`).join(', ');
+  }
+  return (sets as WeightRepsSet[]).map((s) => `${s.weight}kg × ${s.reps}`).join(', ');
+}
+
+export default function ExerciseSetEditor({
+  name,
+  logType,
+  sets,
+  onChange,
+  videoUrl,
+  images,
+  previousSets,
+}: Props) {
   function addSet() {
     const newSet = logType === 'time' ? { durationSec: 0 } : { weight: 0, reps: 0 };
     onChange([...sets, newSet] as WeightRepsSet[] | TimeSet[]);
@@ -23,8 +41,32 @@ export default function ExerciseSetEditor({ name, logType, sets, onChange }: Pro
 
   return (
     <div className="rounded-lg border border-neutral-200 p-4">
-      <p className="mb-3 font-medium">{name}</p>
-      <div className="space-y-2">
+      <p className="font-medium">{name}</p>
+
+      {(videoUrl || (images && images.length > 0)) && (
+        <div className="mt-2 flex items-center gap-2">
+          {videoUrl && (
+            <a
+              href={videoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-blue-600 underline"
+            >
+              ▶ Video ansehen
+            </a>
+          )}
+          {images?.map((src, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={i} src={src} alt="" className="h-10 w-10 rounded object-cover" />
+          ))}
+        </div>
+      )}
+
+      {previousSets && previousSets.length > 0 && (
+        <p className="mt-2 text-xs text-neutral-400">Letztes Mal: {formatSets(logType, previousSets)}</p>
+      )}
+
+      <div className="mt-3 space-y-2">
         {sets.map((set, i) => (
           <div key={i} className="flex items-center gap-2">
             <span className="w-6 text-sm text-neutral-400">{i + 1}.</span>

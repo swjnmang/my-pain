@@ -2,11 +2,31 @@ export type Category = 'oberkoerper' | 'unterkoerper' | 'ganzkoerper';
 
 export type LogType = 'weight_reps' | 'time';
 
+export type PainArea =
+  | 'ruecken'
+  | 'nacken_schulter'
+  | 'huefte'
+  | 'knie'
+  | 'achillessehne'
+  | 'plantarfaszie';
+
+export const PAIN_AREA_LABELS: Record<PainArea, string> = {
+  ruecken: 'Rücken',
+  nacken_schulter: 'Nacken/Schulter',
+  huefte: 'Hüfte',
+  knie: 'Knie',
+  achillessehne: 'Achillessehne',
+  plantarfaszie: 'Plantarfaszie',
+};
+
 export interface Exercise {
   id: string;
   name: string;
   category: Category;
   logType: LogType;
+  videoUrl?: string;
+  images?: string[]; // Base64 Data-URLs, clientseitig verkleinert
+  painAreas?: PainArea[];
 }
 
 export interface WorkoutTemplate {

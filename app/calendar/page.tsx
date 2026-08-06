@@ -32,6 +32,7 @@ function dateKey(year: number, month: number, day: number) {
 }
 
 type GridCell = { type: 'pad' } | { type: 'day'; day: number; key: string };
+type ViewMode = 'list' | 'week' | 'month';
 
 function buildMonthGrid(year: number, month: number): GridCell[] {
   const startWeekday = (new Date(year, month, 1).getDay() + 6) % 7; // Mo=0 .. So=6
@@ -43,13 +44,31 @@ function buildMonthGrid(year: number, month: number): GridCell[] {
   return cells;
 }
 
+function getMonday(date: Date): Date {
+  const d = new Date(date);
+  const weekday = (d.getDay() + 6) % 7; // Mo=0 .. So=6
+  d.setDate(d.getDate() - weekday);
+  return d;
+}
+
+function buildWeekGrid(anchor: Date): GridCell[] {
+  const monday = getMonday(anchor);
+  const cells: GridCell[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    cells.push({ type: 'day', day: d.getDate(), key: dateKey(d.getFullYear(), d.getMonth(), d.getDate()) });
+  }
+  return cells;
+}
+
 function CalendarInner() {
   const { user } = useAuth();
   const today = new Date();
   const todayKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
 
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth());
+  const [viewMode, setViewMode] = useState<ViewMode>('month');
+  const [anchorDate, setAnchorDate] = useState(today);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [planned, setPlanned] = useState<PlannedTraining[]>([]);
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
@@ -99,26 +118,42 @@ function CalendarInner() {
     return map;
   }, [planned]);
 
-  const cells = useMemo(() => buildMonthGrid(year, month), [year, month]);
+  const monthCells = useMemo(
+    () => buildMonthGrid(anchorDate.getFullYear(), anchorDate.getMonth()),
+    [anchorDate]
+  );
+  const weekCells = useMemo(() => buildWeekGrid(anchorDate), [anchorDate]);
 
-  function goToPreviousMonth() {
+  const listItems = useMemo(() => {
+    const items = [
+      ...sessions.map((s) => ({ key: s.date, sourceName: s.sourceName, category: s.category, status: 'done' as const })),
+      ...planned.map((p) => ({ key: p.date, sourceName: p.sourceName, category: p.category, status: 'planned' as const })),
+    ];
+    return items.sort((a, b) => a.key.localeCompare(b.key));
+  }, [sessions, planned]);
+
+  function goToPrevious() {
     setSelectedKey(null);
-    if (month === 0) {
-      setYear((y) => y - 1);
-      setMonth(11);
-    } else {
-      setMonth((m) => m - 1);
-    }
+    setAnchorDate((d) => {
+      if (viewMode === 'week') {
+        const nd = new Date(d);
+        nd.setDate(nd.getDate() - 7);
+        return nd;
+      }
+      return new Date(d.getFullYear(), d.getMonth() - 1, 1);
+    });
   }
 
-  function goToNextMonth() {
+  function goToNext() {
     setSelectedKey(null);
-    if (month === 11) {
-      setYear((y) => y + 1);
-      setMonth(0);
-    } else {
-      setMonth((m) => m + 1);
-    }
+    setAnchorDate((d) => {
+      if (viewMode === 'week') {
+        const nd = new Date(d);
+        nd.setDate(nd.getDate() + 7);
+        return nd;
+      }
+      return new Date(d.getFullYear(), d.getMonth() + 1, 1);
+    });
   }
 
   async function handlePlan(source: WorkoutTemplate | Workout, sourceType: 'template' | 'workout') {
@@ -168,50 +203,100 @@ function CalendarInner() {
 
       {!loading && (
         <>
-          <div className="mb-4 flex items-center justify-between">
-            <button onClick={goToPreviousMonth} className="px-2 py-1 text-lg">
-              ‹
-            </button>
-            <p className="font-medium">
-              {MONTH_NAMES[month]} {year}
-            </p>
-            <button onClick={goToNextMonth} className="px-2 py-1 text-lg">
-              ›
-            </button>
-          </div>
-
-          <div className="mb-1 grid grid-cols-7 text-center text-xs text-neutral-400">
-            {WEEKDAYS.map((w) => (
-              <div key={w}>{w}</div>
+          <div className="mb-4 flex gap-2">
+            {(['list', 'week', 'month'] as ViewMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => {
+                  setViewMode(mode);
+                  setSelectedKey(null);
+                }}
+                className={clsx(
+                  'flex-1 rounded-full px-3 py-1.5 text-sm',
+                  viewMode === mode ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'
+                )}
+              >
+                {mode === 'list' ? 'Liste' : mode === 'week' ? 'Woche' : 'Monat'}
+              </button>
             ))}
           </div>
 
-          <div className="mb-6 grid grid-cols-7 gap-1">
-            {cells.map((cell, i) => {
-              if (cell.type === 'pad') return <div key={i} />;
-              const hasSession = sessionsByDate.has(cell.key);
-              const hasPlan = plannedByDate.has(cell.key);
-              const isToday = cell.key === todayKey;
-              const isSelected = cell.key === selectedKey;
-              return (
+          {viewMode !== 'list' && (
+            <div className="mb-4 flex items-center justify-between">
+              <button onClick={goToPrevious} className="px-2 py-1 text-lg">
+                ‹
+              </button>
+              <p className="font-medium">
+                {viewMode === 'month'
+                  ? `${MONTH_NAMES[anchorDate.getMonth()]} ${anchorDate.getFullYear()}`
+                  : `Woche vom ${getMonday(anchorDate).getDate()}. ${MONTH_NAMES[getMonday(anchorDate).getMonth()]}`}
+              </p>
+              <button onClick={goToNext} className="px-2 py-1 text-lg">
+                ›
+              </button>
+            </div>
+          )}
+
+          {viewMode !== 'list' && (
+            <>
+              <div className="mb-1 grid grid-cols-7 text-center text-xs text-neutral-400">
+                {WEEKDAYS.map((w) => (
+                  <div key={w}>{w}</div>
+                ))}
+              </div>
+
+              <div className="mb-6 grid grid-cols-7 gap-1">
+                {(viewMode === 'month' ? monthCells : weekCells).map((cell, i) => {
+                  if (cell.type === 'pad') return <div key={i} />;
+                  const hasSession = sessionsByDate.has(cell.key);
+                  const hasPlan = plannedByDate.has(cell.key);
+                  const isToday = cell.key === todayKey;
+                  const isSelected = cell.key === selectedKey;
+                  return (
+                    <button
+                      key={cell.key}
+                      onClick={() => setSelectedKey(cell.key)}
+                      className={clsx(
+                        'flex aspect-square flex-col items-center justify-center rounded-lg text-sm',
+                        isSelected ? 'bg-neutral-900 text-white' : 'hover:bg-neutral-100',
+                        isToday && !isSelected && 'border border-neutral-900'
+                      )}
+                    >
+                      <span>{cell.day}</span>
+                      <span className="mt-0.5 flex gap-0.5">
+                        {hasSession && <span className="h-1.5 w-1.5 rounded-full bg-green-500" />}
+                        {hasPlan && <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {viewMode === 'list' && (
+            <div className="mb-6 space-y-2">
+              {listItems.map((item, i) => (
                 <button
-                  key={cell.key}
-                  onClick={() => setSelectedKey(cell.key)}
+                  key={i}
+                  onClick={() => setSelectedKey(item.key)}
                   className={clsx(
-                    'flex aspect-square flex-col items-center justify-center rounded-lg text-sm',
-                    isSelected ? 'bg-neutral-900 text-white' : 'hover:bg-neutral-100',
-                    isToday && !isSelected && 'border border-neutral-900'
+                    'flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left',
+                    item.key === selectedKey ? 'border-neutral-900 bg-neutral-50' : 'border-neutral-200'
                   )}
                 >
-                  <span>{cell.day}</span>
-                  <span className="mt-0.5 flex gap-0.5">
-                    {hasSession && <span className="h-1.5 w-1.5 rounded-full bg-green-500" />}
-                    {hasPlan && <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />}
-                  </span>
+                  <div>
+                    <p className="font-medium">{item.sourceName}</p>
+                    <p className="text-sm text-neutral-500">
+                      {item.key} · {CATEGORY_LABELS[item.category]}
+                    </p>
+                  </div>
+                  <span className={clsx('h-2 w-2 rounded-full', item.status === 'done' ? 'bg-green-500' : 'bg-blue-500')} />
                 </button>
-              );
-            })}
-          </div>
+              ))}
+              {listItems.length === 0 && <p className="text-sm text-neutral-400">Noch keine Trainings.</p>}
+            </div>
+          )}
 
           {selectedKey && (
             <div className="rounded-lg border border-neutral-200 p-4">

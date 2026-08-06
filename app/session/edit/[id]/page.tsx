@@ -6,8 +6,8 @@ import RequireAuth from '@/components/RequireAuth';
 import AppShell from '@/components/AppShell';
 import ExerciseSetEditor from '@/components/ExerciseSetEditor';
 import { useAuth } from '@/lib/AuthContext';
-import { getSession, updateSession } from '@/lib/data';
-import { Session, PreSurvey, ExerciseLog, WeightRepsSet, TimeSet } from '@/lib/types';
+import { getSession, updateSession, getAllExercisesForUser } from '@/lib/data';
+import { Session, PreSurvey, ExerciseLog, WeightRepsSet, TimeSet, Exercise } from '@/lib/types';
 
 function EditSessionInner() {
   const { user } = useAuth();
@@ -19,14 +19,15 @@ function EditSessionInner() {
   const [date, setDate] = useState('');
   const [survey, setSurvey] = useState<PreSurvey>({ painLevel: 0, painRegion: '', sleepHours: 7, mood: 5 });
   const [logs, setLogs] = useState<ExerciseLog[]>([]);
+  const [exerciseMedia, setExerciseMedia] = useState<Record<string, Exercise>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!user || !sessionId) return;
-    getSession(user.uid, sessionId)
-      .then((s) => {
+    Promise.all([getSession(user.uid, sessionId), getAllExercisesForUser(user.uid)])
+      .then(([s, allExercises]) => {
         if (!s) {
           setError('Training nicht gefunden.');
           return;
@@ -35,6 +36,7 @@ function EditSessionInner() {
         setDate(s.date);
         setSurvey(s.preSurvey);
         setLogs(s.exerciseLogs);
+        setExerciseMedia(Object.fromEntries(allExercises.map((ex) => [ex.id, ex])));
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Fehler beim Laden.'))
       .finally(() => setLoading(false));
@@ -129,6 +131,8 @@ function EditSessionInner() {
                 logType={log.logType}
                 sets={log.sets}
                 onChange={(sets) => updateLogSets(log.exerciseId, sets)}
+                videoUrl={exerciseMedia[log.exerciseId]?.videoUrl}
+                images={exerciseMedia[log.exerciseId]?.images}
               />
             ))}
           </div>
