@@ -10,6 +10,7 @@ interface Props {
   videoUrl?: string;
   images?: string[];
   previousSets?: WeightRepsSet[] | TimeSet[];
+  note?: string;
 }
 
 function formatSets(logType: LogType, sets: WeightRepsSet[] | TimeSet[]): string {
@@ -27,6 +28,7 @@ export default function ExerciseSetEditor({
   videoUrl,
   images,
   previousSets,
+  note,
 }: Props) {
   function addSet() {
     const newSet = logType === 'time' ? { durationSec: 0 } : { weight: 0, reps: 0 };
@@ -42,6 +44,10 @@ export default function ExerciseSetEditor({
   return (
     <div className="rounded-lg border border-neutral-200 p-4">
       <p className="font-medium">{name}</p>
+
+      {note && (
+        <p className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-800">{note}</p>
+      )}
 
       {(videoUrl || (images && images.length > 0)) && (
         <div className="mt-2 flex items-center gap-2">

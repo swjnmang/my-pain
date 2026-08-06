@@ -133,6 +133,7 @@ function EditSessionInner() {
                 onChange={(sets) => updateLogSets(log.exerciseId, sets)}
                 videoUrl={exerciseMedia[log.exerciseId]?.videoUrl}
                 images={exerciseMedia[log.exerciseId]?.images}
+                note={exerciseMedia[log.exerciseId]?.note}
               />
             ))}
           </div>

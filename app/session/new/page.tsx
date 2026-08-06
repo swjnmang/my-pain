@@ -197,6 +197,7 @@ function SessionInner() {
               videoUrl={ex.videoUrl}
               images={ex.images}
               previousSets={previousLogs[ex.id]}
+              note={ex.note}
             />
           ))}
 

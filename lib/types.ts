@@ -27,6 +27,7 @@ export interface Exercise {
   videoUrl?: string;
   images?: string[]; // Base64 Data-URLs, clientseitig verkleinert
   painAreas?: PainArea[];
+  note?: string; // kurzer Hinweis zur Ausführung, z.B. HSR-Technik
 }
 
 export interface WorkoutTemplate {

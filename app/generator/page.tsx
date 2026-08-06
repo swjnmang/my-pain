@@ -10,7 +10,18 @@ import { getAllExercisesForUser, createUserWorkout } from '@/lib/data';
 import { Exercise, PainArea, PAIN_AREA_LABELS, Category, CATEGORY_LABELS } from '@/lib/types';
 
 const PAIN_AREAS: PainArea[] = ['ruecken', 'nacken_schulter', 'huefte', 'knie', 'achillessehne', 'plantarfaszie'];
-const SUGGESTION_COUNT = 6;
+const TARGET_TOTAL = 10;
+
+// Evidenzbasierte Protokoll-Übungen, die bei Auswahl des jeweiligen Schmerzbereichs
+// immer Teil des generierten Trainings sind (siehe Recherche im Plan-Dokument).
+const PROTOCOL_EXERCISES: Partial<Record<PainArea, string[]>> = {
+  achillessehne: ['wadenheben-hsr'],
+  plantarfaszie: ['wadenheben-handtuch'],
+  ruecken: ['mcgill-curl-up', 'mcgill-side-plank', 'mcgill-bird-dog'],
+  knie: ['decline-squat'],
+  huefte: ['hueftabduktion-isometrisch'],
+  nacken_schulter: ['aussenrotation-band'],
+};
 
 function shuffle<T>(items: T[]): T[] {
   const arr = [...items];
@@ -46,6 +57,16 @@ function GeneratorInner() {
     return allExercises.filter((ex) => ex.painAreas?.some((a) => selectedAreas.has(a)));
   }, [allExercises, selectedAreas]);
 
+  const requiredIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const area of Array.from(selectedAreas)) {
+      for (const id of PROTOCOL_EXERCISES[area] ?? []) {
+        if (matches.some((ex) => ex.id === id)) ids.add(id);
+      }
+    }
+    return ids;
+  }, [selectedAreas, matches]);
+
   function toggleArea(area: PainArea) {
     setSelectedAreas((prev) => {
       const next = new Set(prev);
@@ -58,12 +79,17 @@ function GeneratorInner() {
   }
 
   function reshuffle() {
-    const picked = shuffle(matches).slice(0, SUGGESTION_COUNT);
+    const optional = matches.filter((ex) => !requiredIds.has(ex.id));
+    const fillCount = Math.max(0, TARGET_TOTAL - requiredIds.size);
+    const filled = shuffle(optional).slice(0, fillCount);
+    const required = matches.filter((ex) => requiredIds.has(ex.id));
+    const picked = [...required, ...filled];
     setSuggested(picked);
     setSelectedIds(new Set(picked.map((ex) => ex.id)));
   }
 
   function toggleSelected(id: string) {
+    if (requiredIds.has(id)) return; // Protokoll-Pflichtübung, nicht abwählbar
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -103,8 +129,11 @@ function GeneratorInner() {
   return (
     <AppShell title="Training nach Schmerzbereich">
       <p className="mb-4 text-xs text-neutral-400">
-        Keine medizinische Beratung. Bei starken oder anhaltenden Schmerzen bitte ärztlich bzw.
-        physiotherapeutisch abklären lassen.
+        Keine medizinische Beratung. Die vorgeschlagenen Übungen orientieren sich an in Studien
+        geprüften Trainingsprotokollen (z.B. Heavy-Slow-Resistance- bzw. Alfredson-Prinzip für die
+        Achillessehne). Ein gewisses Maß an Trainingsschmerz ist bei diesen Protokollen üblich —
+        scharfer oder zunehmender Schmerz ist ein Stopp-Signal. Bei starken oder anhaltenden
+        Schmerzen bitte ärztlich bzw. physiotherapeutisch abklären lassen.
       </p>
 
       {loading && <p className="text-sm text-neutral-500">Lädt…</p>}
@@ -155,14 +184,19 @@ function GeneratorInner() {
                   <button
                     key={ex.id}
                     onClick={() => toggleSelected(ex.id)}
+                    disabled={requiredIds.has(ex.id)}
                     className={clsx(
                       'flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left',
-                      selectedIds.has(ex.id) ? 'border-neutral-900 bg-neutral-50' : 'border-neutral-200'
+                      selectedIds.has(ex.id) ? 'border-neutral-900 bg-neutral-50' : 'border-neutral-200',
+                      requiredIds.has(ex.id) && 'border-amber-300 bg-amber-50'
                     )}
                   >
                     <span>
                       {ex.name}
                       <span className="ml-2 text-xs text-neutral-400">{CATEGORY_LABELS[ex.category]}</span>
+                      {requiredIds.has(ex.id) && (
+                        <span className="ml-2 text-xs font-medium text-amber-700">Protokoll-Übung</span>
+                      )}
                     </span>
                     {selectedIds.has(ex.id) && <span className="text-sm">✓</span>}
                   </button>
