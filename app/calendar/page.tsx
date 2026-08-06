@@ -51,6 +51,17 @@ function getMonday(date: Date): Date {
   return d;
 }
 
+function getWeekLabel(anchor: Date): string {
+  const monday = getMonday(anchor);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const startLabel =
+    monday.getMonth() === sunday.getMonth()
+      ? `${monday.getDate()}.`
+      : `${monday.getDate()}. ${MONTH_NAMES[monday.getMonth()]}`;
+  return `Woche vom ${startLabel} bis ${sunday.getDate()}. ${MONTH_NAMES[sunday.getMonth()]}`;
+}
+
 function buildWeekGrid(anchor: Date): GridCell[] {
   const monday = getMonday(anchor);
   const cells: GridCell[] = [];
@@ -67,7 +78,7 @@ function CalendarInner() {
   const today = new Date();
   const todayKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
 
-  const [viewMode, setViewMode] = useState<ViewMode>('month');
+  const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [anchorDate, setAnchorDate] = useState(today);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [planned, setPlanned] = useState<PlannedTraining[]>([]);
@@ -229,7 +240,7 @@ function CalendarInner() {
               <p className="font-medium">
                 {viewMode === 'month'
                   ? `${MONTH_NAMES[anchorDate.getMonth()]} ${anchorDate.getFullYear()}`
-                  : `Woche vom ${getMonday(anchorDate).getDate()}. ${MONTH_NAMES[getMonday(anchorDate).getMonth()]}`}
+                  : getWeekLabel(anchorDate)}
               </p>
               <button onClick={goToNext} className="px-2 py-1 text-lg">
                 ›
