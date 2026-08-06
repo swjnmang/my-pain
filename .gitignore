@@ -33,6 +33,7 @@ yarn-error.log*
 
 # firebase service account (nur lokal für scripts/seed.ts)
 *serviceAccount*.json
+*firebase-adminsdk*.json
 
 # typescript
 *.tsbuildinfo

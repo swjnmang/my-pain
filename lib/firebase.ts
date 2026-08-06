@@ -28,4 +28,6 @@ if (typeof window !== 'undefined' && isFirebaseConfigured && !getApps().length) 
 }
 
 export { auth, db };
-export const isFirebaseEnabled = isFirebaseConfigured && auth !== undefined && db !== undefined;
+// Nur von der Config abhängig (nicht von auth/db-Instanzen), damit Server- und
+// Client-Rendering übereinstimmen und kein Hydration-Mismatch entsteht.
+export const isFirebaseEnabled = isFirebaseConfigured;
