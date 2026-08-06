@@ -1,101 +1,145 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+import RequireAuth from '@/components/RequireAuth';
+import AppShell from '@/components/AppShell';
+import { useAuth } from '@/lib/AuthContext';
+import { getSessions } from '@/lib/data';
+import { Session, WeightRepsSet } from '@/lib/types';
+
+function DashboardInner() {
+  const { user } = useAuth();
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedExerciseId, setSelectedExerciseId] = useState<string>('');
+
+  useEffect(() => {
+    if (!user) return;
+    getSessions(user.uid)
+      .then(setSessions)
+      .finally(() => setLoading(false));
+  }, [user]);
+
+  const painData = useMemo(
+    () =>
+      [...sessions]
+        .reverse()
+        .map((s) => ({ date: s.date, Schmerz: s.preSurvey.painLevel })),
+    [sessions]
+  );
+
+  const exerciseOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const s of sessions) {
+      for (const log of s.exerciseLogs) {
+        if (log.logType === 'weight_reps') map.set(log.exerciseId, log.exerciseName);
+      }
+    }
+    return Array.from(map.entries());
+  }, [sessions]);
+
+  useEffect(() => {
+    if (!selectedExerciseId && exerciseOptions.length > 0) {
+      setSelectedExerciseId(exerciseOptions[0][0]);
+    }
+  }, [exerciseOptions, selectedExerciseId]);
+
+  const strengthData = useMemo(() => {
+    if (!selectedExerciseId) return [];
+    return [...sessions]
+      .reverse()
+      .map((s) => {
+        const log = s.exerciseLogs.find((l) => l.exerciseId === selectedExerciseId);
+        if (!log) return null;
+        const maxWeight = Math.max(0, ...(log.sets as WeightRepsSet[]).map((set) => set.weight));
+        return { date: s.date, 'Max. Gewicht (kg)': maxWeight };
+      })
+      .filter((d): d is { date: string; 'Max. Gewicht (kg)': number } => Boolean(d));
+  }, [sessions, selectedExerciseId]);
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <AppShell title="my-pain">
+      <Link
+        href="/training"
+        className="mb-6 block rounded-lg bg-neutral-900 px-4 py-3 text-center text-base font-medium text-white"
+      >
+        Training starten
+      </Link>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {loading && <p className="text-sm text-neutral-500">Lädt…</p>}
+
+      {!loading && sessions.length === 0 && (
+        <p className="text-sm text-neutral-400">
+          Noch keine Trainings geloggt. Starte dein erstes Training, um hier Verläufe zu sehen.
+        </p>
+      )}
+
+      {!loading && sessions.length > 0 && (
+        <div className="space-y-8">
+          <section>
+            <h2 className="mb-2 text-sm font-semibold text-neutral-500">Schmerzverlauf</h2>
+            <div className="h-56 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={painData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                  <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="Schmerz" stroke="#dc2626" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
+
+          {exerciseOptions.length > 0 && (
+            <section>
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-neutral-500">Kraftfortschritt</h2>
+                <select
+                  value={selectedExerciseId}
+                  onChange={(e) => setSelectedExerciseId(e.target.value)}
+                  className="rounded-lg border border-neutral-300 px-2 py-1 text-sm"
+                >
+                  {exerciseOptions.map(([id, name]) => (
+                    <option key={id} value={id}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="h-56 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={strengthData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="Max. Gewicht (kg)" stroke="#171717" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
+          )}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      )}
+    </AppShell>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <RequireAuth>
+      <DashboardInner />
+    </RequireAuth>
   );
 }

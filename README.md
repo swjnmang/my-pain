@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# my-pain
 
-## Getting Started
+Fitness- & Schmerz-Tracking: Trainings (Oberkörper/Unterkörper/Ganzkörper) loggen und dabei Schmerz, Schlaf und Stimmung vor jedem Training erfassen, um den Verlauf über Zeit zu sehen.
 
-First, run the development server:
+## Stack
+
+- Next.js 14 (App Router, TypeScript), Tailwind CSS
+- Firebase Auth (E-Mail/Passwort) + Firestore
+- Recharts für Verlaufsdiagramme
+- Deployment: Vercel
+
+## Lokales Setup
+
+1. Abhängigkeiten installieren:
+
+   ```bash
+   npm install
+   ```
+
+2. Firebase-Projekt anlegen (falls noch nicht geschehen):
+   - [Firebase Console](https://console.firebase.google.com/) → neues Projekt
+   - **Authentication** → Sign-in-Methode **E-Mail/Passwort** aktivieren
+   - **Firestore Database** → im produktiven Modus anlegen (Region z.B. `eur3`)
+   - Unter Projekteinstellungen → "Web-App hinzufügen", die Config-Werte kopieren
+
+3. `.env.local` aus der Vorlage erstellen und mit den Firebase-Werten befüllen:
+
+   ```bash
+   cp .env.local.example .env.local
+   ```
+
+4. Übungskatalog & Trainingsvorlagen einmalig in Firestore seeden:
+   - In der Firebase Console unter Projekteinstellungen → Dienstkonten → "Neuen privaten Schlüssel generieren" (JSON-Datei herunterladen, **niemals committen**)
+   - Pfad zur Datei in `.env.local` unter `SEED_SERVICE_ACCOUNT_PATH` eintragen
+   - Ausführen:
+
+     ```bash
+     npm run seed
+     ```
+
+5. Firestore-Regeln deployen (via [Firebase CLI](https://firebase.google.com/docs/cli) oder manuell in der Console unter Firestore → Regeln den Inhalt von `firestore.rules` einfügen)
+
+6. Dev-Server starten:
+
+   ```bash
+   npm run dev
+   ```
+
+## Deployment (Vercel)
+
+1. Neues Projekt in Vercel anlegen, GitHub-Repo `swjnmang/my-pain` verknüpfen
+2. Unter Project Settings → Environment Variables alle `NEXT_PUBLIC_FIREBASE_*` Werte aus `.env.local` eintragen (der `SEED_SERVICE_ACCOUNT_PATH` wird dort **nicht** benötigt, das Seeden läuft nur lokal)
+3. Deploy auslösen (automatisch bei Push auf `main`)
+
+## Vor jedem Push
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run check
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+führt Lint, Typecheck und Build aus.
