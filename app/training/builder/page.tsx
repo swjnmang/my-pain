@@ -7,7 +7,7 @@ import clsx from 'clsx';
 import RequireAuth from '@/components/RequireAuth';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/AuthContext';
-import { getAllExercisesForUser, createUserWorkout } from '@/lib/data';
+import { getExercises, getUserExercises, createUserWorkout } from '@/lib/data';
 import { Category, CATEGORY_LABELS, Exercise } from '@/lib/types';
 
 const CATEGORIES: Category[] = ['oberkoerper', 'unterkoerper', 'ganzkoerper'];
@@ -16,6 +16,7 @@ function BuilderInner() {
   const { user } = useAuth();
   const router = useRouter();
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [ownExerciseIds, setOwnExerciseIds] = useState<Set<string>>(new Set());
   const [category, setCategory] = useState<Category>('oberkoerper');
   const [name, setName] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -25,8 +26,11 @@ function BuilderInner() {
 
   useEffect(() => {
     if (!user) return;
-    getAllExercisesForUser(user.uid)
-      .then(setExercises)
+    Promise.all([getExercises(), getUserExercises(user.uid)])
+      .then(([global, own]) => {
+        setExercises([...global, ...own]);
+        setOwnExerciseIds(new Set(own.map((ex) => ex.id)));
+      })
       .catch((err) => setError(err instanceof Error ? err.message : 'Fehler beim Laden.'))
       .finally(() => setLoading(false));
   }, [user]);
@@ -103,17 +107,27 @@ function BuilderInner() {
 
       <div className="mb-24 space-y-2">
         {visibleExercises.map((ex) => (
-          <button
-            key={ex.id}
-            onClick={() => toggleExercise(ex.id)}
-            className={clsx(
-              'flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left',
-              selected.has(ex.id) ? 'border-neutral-900 bg-neutral-50' : 'border-neutral-200'
+          <div key={ex.id} className="flex items-center gap-2">
+            <button
+              onClick={() => toggleExercise(ex.id)}
+              className={clsx(
+                'flex flex-1 items-center justify-between rounded-lg border px-4 py-3 text-left',
+                selected.has(ex.id) ? 'border-neutral-900 bg-neutral-50' : 'border-neutral-200'
+              )}
+            >
+              <span>{ex.name}</span>
+              {selected.has(ex.id) && <span className="text-sm">✓</span>}
+            </button>
+            {ownExerciseIds.has(ex.id) && (
+              <Link
+                href={`/exercises/${ex.id}/edit`}
+                className="rounded-lg border border-neutral-200 px-3 py-3 text-sm"
+                title="Übung bearbeiten"
+              >
+                ✎
+              </Link>
             )}
-          >
-            <span>{ex.name}</span>
-            {selected.has(ex.id) && <span className="text-sm">✓</span>}
-          </button>
+          </div>
         ))}
       </div>
 

@@ -8,6 +8,10 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updatePassword,
+  updateEmail,
   signOut,
 } from 'firebase/auth';
 import { auth, isFirebaseEnabled } from './firebase';
@@ -19,6 +23,8 @@ interface AuthContextValue {
   signup: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
+  changePassword: (newPassword: string, currentPassword: string) => Promise<void>;
+  changeEmail: (newEmail: string, currentPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -59,8 +65,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signOut(auth);
   }
 
+  async function changePassword(newPassword: string, currentPassword: string) {
+    if (!auth?.currentUser?.email) throw new Error('Nicht angemeldet.');
+    const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
+    await reauthenticateWithCredential(auth.currentUser, credential);
+    await updatePassword(auth.currentUser, newPassword);
+  }
+
+  async function changeEmail(newEmail: string, currentPassword: string) {
+    if (!auth?.currentUser?.email) throw new Error('Nicht angemeldet.');
+    const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
+    await reauthenticateWithCredential(auth.currentUser, credential);
+    await updateEmail(auth.currentUser, newEmail);
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, signup, loginWithGoogle, logout, changePassword, changeEmail }}
+    >
       {children}
     </AuthContext.Provider>
   );

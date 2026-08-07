@@ -89,6 +89,12 @@ export interface PlannedTraining {
   createdAt: number;
 }
 
+export interface UserProfile {
+  heightCm?: number;
+  weightKg?: number;
+  updatedAt: number;
+}
+
 export const CATEGORY_LABELS: Record<Category, string> = {
   oberkoerper: 'Oberkörper',
   unterkoerper: 'Unterkörper',

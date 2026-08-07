@@ -6,11 +6,21 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  setDoc,
   query,
   orderBy,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { Exercise, WorkoutTemplate, Workout, Session, PlannedTraining, PreSurvey, ExerciseLog } from './types';
+import {
+  Exercise,
+  WorkoutTemplate,
+  Workout,
+  Session,
+  PlannedTraining,
+  PreSurvey,
+  ExerciseLog,
+  UserProfile,
+} from './types';
 
 function requireDb() {
   if (!db) throw new Error('Firebase ist nicht konfiguriert.');
@@ -30,6 +40,19 @@ export async function getUserExercises(uid: string): Promise<Exercise[]> {
 export async function createUserExercise(uid: string, exercise: Omit<Exercise, 'id'>): Promise<string> {
   const ref = await addDoc(collection(requireDb(), 'users', uid, 'exercises'), exercise);
   return ref.id;
+}
+
+export async function getUserExercise(uid: string, id: string): Promise<Exercise | null> {
+  const snap = await getDoc(doc(requireDb(), 'users', uid, 'exercises', id));
+  return snap.exists() ? ({ id: snap.id, ...snap.data() } as Exercise) : null;
+}
+
+export async function updateUserExercise(
+  uid: string,
+  id: string,
+  exercise: Omit<Exercise, 'id'>
+): Promise<void> {
+  await updateDoc(doc(requireDb(), 'users', uid, 'exercises', id), exercise);
 }
 
 export async function getAllExercisesForUser(uid: string): Promise<Exercise[]> {
@@ -104,4 +127,16 @@ export async function createPlannedTraining(
 
 export async function deletePlannedTraining(uid: string, id: string): Promise<void> {
   await deleteDoc(doc(requireDb(), 'users', uid, 'plannedTrainings', id));
+}
+
+export async function getUserProfile(uid: string): Promise<UserProfile | null> {
+  const snap = await getDoc(doc(requireDb(), 'users', uid));
+  return snap.exists() ? (snap.data() as UserProfile) : null;
+}
+
+export async function updateUserProfile(
+  uid: string,
+  profile: Omit<UserProfile, 'updatedAt'>
+): Promise<void> {
+  await setDoc(doc(requireDb(), 'users', uid), { ...profile, updatedAt: Date.now() }, { merge: true });
 }

@@ -15,8 +15,18 @@ import {
   deletePlannedTraining,
 } from '@/lib/data';
 import { Exercise, ExerciseLog, PreSurvey, Category, WeightRepsSet, TimeSet } from '@/lib/types';
+import { getDefaultSets } from '@/lib/exerciseDefaults';
 
 type Step = 'survey' | 'log';
+
+function normalizeToThreeSets(sets: WeightRepsSet[] | TimeSet[]): WeightRepsSet[] | TimeSet[] {
+  const copies = sets.map((s) => ({ ...s })) as (WeightRepsSet | TimeSet)[];
+  const result = copies.slice(0, 3);
+  while (result.length < 3) {
+    result.push({ ...result[result.length - 1] });
+  }
+  return result as WeightRepsSet[] | TimeSet[];
+}
 
 function SessionInner() {
   const { user } = useAuth();
@@ -74,9 +84,9 @@ function SessionInner() {
         const priorLog = priorSession?.exerciseLogs.find((l) => l.exerciseId === ex.id);
         if (priorLog && priorLog.sets.length > 0) {
           previous[ex.id] = priorLog.sets;
-          initialLogs[ex.id] = priorLog.sets.map((s) => ({ ...s })) as WeightRepsSet[] | TimeSet[];
+          initialLogs[ex.id] = normalizeToThreeSets(priorLog.sets);
         } else {
-          initialLogs[ex.id] = ex.logType === 'time' ? [{ durationSec: 0 }] : [{ weight: 0, reps: 0 }];
+          initialLogs[ex.id] = getDefaultSets(ex.id, ex.logType);
         }
       }
       setLogs(initialLogs);
