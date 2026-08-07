@@ -11,7 +11,7 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
   updatePassword,
-  updateEmail,
+  verifyBeforeUpdateEmail,
   signOut,
 } from 'firebase/auth';
 import { auth, isFirebaseEnabled } from './firebase';
@@ -76,7 +76,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!auth?.currentUser?.email) throw new Error('Nicht angemeldet.');
     const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
     await reauthenticateWithCredential(auth.currentUser, credential);
-    await updateEmail(auth.currentUser, newEmail);
+    // Ändert die E-Mail erst, nachdem der Link in der Bestätigungsmail an die neue Adresse angeklickt wurde.
+    await verifyBeforeUpdateEmail(auth.currentUser, newEmail);
   }
 
   return (

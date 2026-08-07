@@ -83,7 +83,7 @@ function ProfileInner() {
       await changeEmail(newEmail, currentPasswordForEmail);
       setNewEmail('');
       setCurrentPasswordForEmail('');
-      setEmailMessage('E-Mail-Adresse geändert.');
+      setEmailMessage('Bestätigungslink an die neue Adresse gesendet. Die Änderung wird wirksam, sobald du ihn anklickst.');
     } catch (err) {
       setEmailError(err instanceof Error ? err.message : 'E-Mail ändern fehlgeschlagen.');
     } finally {
