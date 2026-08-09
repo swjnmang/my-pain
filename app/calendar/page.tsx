@@ -341,6 +341,14 @@ function CalendarInner() {
                     >
                       Jetzt starten
                     </Link>
+                    {selectedPlan.sourceType === 'workout' && (
+                      <Link
+                        href={`/training/edit/${selectedPlan.sourceId}`}
+                        className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
+                      >
+                        Bearbeiten
+                      </Link>
+                    )}
                     <button
                       onClick={() => handleDeletePlan(selectedPlan.id)}
                       disabled={busy}

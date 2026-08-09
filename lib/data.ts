@@ -88,6 +88,14 @@ export async function createUserWorkout(
   return ref.id;
 }
 
+export async function updateUserWorkout(
+  uid: string,
+  id: string,
+  workout: Omit<Workout, 'id' | 'createdAt'>
+): Promise<void> {
+  await updateDoc(doc(requireDb(), 'users', uid, 'workouts', id), workout);
+}
+
 export async function getSessions(uid: string): Promise<Session[]> {
   const q = query(collection(requireDb(), 'users', uid, 'sessions'), orderBy('createdAt', 'desc'));
   const snap = await getDocs(q);

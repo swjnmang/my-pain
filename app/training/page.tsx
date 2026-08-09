@@ -72,16 +72,24 @@ function TrainingListInner() {
           <h2 className="mb-2 text-sm font-semibold text-neutral-500">Meine Trainings</h2>
           <div className="space-y-2">
             {filteredOwn.map((w) => (
-              <Link
-                key={w.id}
-                href={`/session/new?type=workout&id=${w.id}`}
-                className="block rounded-lg border border-neutral-200 px-4 py-3"
-              >
-                <p className="font-medium">{w.name}</p>
-                <p className="text-sm text-neutral-500">
-                  {CATEGORY_LABELS[w.category]} · {w.exerciseIds.length} Übungen
-                </p>
-              </Link>
+              <div key={w.id} className="flex items-center gap-2">
+                <Link
+                  href={`/session/new?type=workout&id=${w.id}`}
+                  className="block flex-1 rounded-lg border border-neutral-200 px-4 py-3"
+                >
+                  <p className="font-medium">{w.name}</p>
+                  <p className="text-sm text-neutral-500">
+                    {CATEGORY_LABELS[w.category]} · {w.exerciseIds.length} Übungen
+                  </p>
+                </Link>
+                <Link
+                  href={`/training/edit/${w.id}`}
+                  className="rounded-lg border border-neutral-200 px-3 py-3 text-sm"
+                  title="Training bearbeiten"
+                >
+                  ✎
+                </Link>
+              </div>
             ))}
           </div>
         </section>
