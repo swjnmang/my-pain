@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { getWorkoutTemplates, getUserWorkouts } from '@/lib/data';
 import { Category, CATEGORY_LABELS, WorkoutTemplate, Workout } from '@/lib/types';
 
-const CATEGORIES: Category[] = ['oberkoerper', 'unterkoerper', 'ganzkoerper'];
+const CATEGORIES: Category[] = ['oberkoerper', 'unterkoerper', 'ganzkoerper', 'warmup'];
 
 function TrainingListInner() {
   const { user } = useAuth();
@@ -35,7 +35,7 @@ function TrainingListInner() {
 
   return (
     <AppShell title="Training">
-      <div className="mb-4 flex gap-2 overflow-x-auto">
+      <div className="mb-6 flex gap-2 overflow-x-auto">
         {(['alle', ...CATEGORIES] as const).map((c) => (
           <button
             key={c}
@@ -48,14 +48,13 @@ function TrainingListInner() {
             {c === 'alle' ? 'Alle' : CATEGORY_LABELS[c]}
           </button>
         ))}
+        <Link
+          href="/generator"
+          className="whitespace-nowrap rounded-full bg-amber-100 px-3 py-1.5 text-sm font-medium text-amber-800"
+        >
+          Nach Schmerzbereich
+        </Link>
       </div>
-
-      <Link
-        href="/generator"
-        className="mb-2 block rounded-lg bg-neutral-900 px-4 py-3 text-center text-sm font-medium text-white"
-      >
-        Training nach Schmerzbereich
-      </Link>
 
       <Link
         href="/training/builder"

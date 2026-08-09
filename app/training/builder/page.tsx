@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { getExercises, getUserExercises, createUserWorkout } from '@/lib/data';
 import { Category, CATEGORY_LABELS, Exercise } from '@/lib/types';
 
-const CATEGORIES: Category[] = ['oberkoerper', 'unterkoerper', 'ganzkoerper'];
+const CATEGORIES: Category[] = ['oberkoerper', 'unterkoerper', 'ganzkoerper', 'warmup'];
 
 function BuilderInner() {
   const { user } = useAuth();

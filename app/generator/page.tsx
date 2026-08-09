@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import clsx from 'clsx';
 import RequireAuth from '@/components/RequireAuth';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/AuthContext';
-import { getAllExercisesForUser, createUserWorkout } from '@/lib/data';
-import { Exercise, PainArea, PAIN_AREA_LABELS, Category, CATEGORY_LABELS } from '@/lib/types';
+import { getAllExercisesForUser, getWorkoutTemplates, createUserWorkout } from '@/lib/data';
+import { Exercise, WorkoutTemplate, PainArea, PAIN_AREA_LABELS, Category, CATEGORY_LABELS } from '@/lib/types';
 
 const PAIN_AREAS: PainArea[] = ['ruecken', 'nacken_schulter', 'huefte', 'knie', 'achillessehne', 'plantarfaszie'];
 const TARGET_TOTAL = 10;
@@ -37,6 +38,7 @@ function GeneratorInner() {
   const router = useRouter();
 
   const [allExercises, setAllExercises] = useState<Exercise[]>([]);
+  const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedAreas, setSelectedAreas] = useState<Set<PainArea>>(new Set());
@@ -46,11 +48,19 @@ function GeneratorInner() {
 
   useEffect(() => {
     if (!user) return;
-    getAllExercisesForUser(user.uid)
-      .then(setAllExercises)
+    Promise.all([getAllExercisesForUser(user.uid), getWorkoutTemplates()])
+      .then(([ex, t]) => {
+        setAllExercises(ex);
+        setTemplates(t);
+      })
       .catch((err) => setError(err instanceof Error ? err.message : 'Fehler beim Laden.'))
       .finally(() => setLoading(false));
   }, [user]);
+
+  const matchingTemplates = useMemo(
+    () => templates.filter((t) => t.painAreas?.some((a) => selectedAreas.has(a))),
+    [templates, selectedAreas]
+  );
 
   const matches = useMemo(() => {
     if (selectedAreas.size === 0) return [];
@@ -156,6 +166,26 @@ function GeneratorInner() {
               </button>
             ))}
           </div>
+
+          {matchingTemplates.length > 0 && (
+            <div className="mb-6">
+              <p className="mb-2 text-sm font-medium">Vorgefertigte Trainings</p>
+              <div className="space-y-2">
+                {matchingTemplates.map((t) => (
+                  <Link
+                    key={t.id}
+                    href={`/session/new?type=template&id=${t.id}`}
+                    className="block rounded-lg border border-neutral-200 px-4 py-3"
+                  >
+                    <p className="font-medium">{t.name}</p>
+                    <p className="text-sm text-neutral-500">
+                      {CATEGORY_LABELS[t.category]} · {t.exerciseIds.length} Übungen
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           {selectedAreas.size > 0 && matches.length === 0 && (
             <p className="text-sm text-neutral-400">Keine passenden Übungen für diese Auswahl gefunden.</p>

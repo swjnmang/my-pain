@@ -1,4 +1,4 @@
-export type Category = 'oberkoerper' | 'unterkoerper' | 'ganzkoerper';
+export type Category = 'oberkoerper' | 'unterkoerper' | 'ganzkoerper' | 'warmup';
 
 export type LogType = 'weight_reps' | 'time';
 
@@ -35,6 +35,7 @@ export interface WorkoutTemplate {
   name: string;
   category: Category;
   exerciseIds: string[];
+  painAreas?: PainArea[];
 }
 
 export interface Workout {
@@ -99,4 +100,5 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   oberkoerper: 'Oberkörper',
   unterkoerper: 'Unterkörper',
   ganzkoerper: 'Ganzkörper',
+  warmup: 'Warm-up',
 };

@@ -6,7 +6,7 @@ import RequireAuth from '@/components/RequireAuth';
 import AppShell from '@/components/AppShell';
 import ExerciseSetEditor from '@/components/ExerciseSetEditor';
 import { useAuth } from '@/lib/AuthContext';
-import { getSession, updateSession, getAllExercisesForUser } from '@/lib/data';
+import { getSession, updateSession, deleteSession, getAllExercisesForUser } from '@/lib/data';
 import { Session, PreSurvey, ExerciseLog, WeightRepsSet, TimeSet, Exercise } from '@/lib/types';
 
 function EditSessionInner() {
@@ -23,6 +23,7 @@ function EditSessionInner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!user || !sessionId) return;
@@ -57,6 +58,21 @@ function EditSessionInner() {
       setError(err instanceof Error ? err.message : 'Speichern fehlgeschlagen.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!user) return;
+    if (!window.confirm('Dieses Training wirklich löschen?')) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      await deleteSession(user.uid, sessionId);
+      router.replace('/history');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Löschen fehlgeschlagen.');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -137,6 +153,14 @@ function EditSessionInner() {
               />
             ))}
           </div>
+
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="w-full rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 disabled:opacity-50"
+          >
+            {deleting ? 'Löscht…' : 'Training löschen'}
+          </button>
 
           <div className="fixed inset-x-0 bottom-16 border-t border-neutral-200 bg-white p-4">
             <button

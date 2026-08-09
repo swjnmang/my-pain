@@ -10,7 +10,7 @@ import { createUserExercise } from '@/lib/data';
 import { resizeImageToDataUrl } from '@/lib/image';
 import { Category, CATEGORY_LABELS, LogType, PainArea, PAIN_AREA_LABELS } from '@/lib/types';
 
-const CATEGORIES: Category[] = ['oberkoerper', 'unterkoerper', 'ganzkoerper'];
+const CATEGORIES: Category[] = ['oberkoerper', 'unterkoerper', 'ganzkoerper', 'warmup'];
 const LOG_TYPES: { value: LogType; label: string }[] = [
   { value: 'weight_reps', label: 'Gewicht & Wdh.' },
   { value: 'time', label: 'Zeit' },

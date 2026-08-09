@@ -13,6 +13,8 @@ import {
   getUserWorkouts,
   createPlannedTraining,
   deletePlannedTraining,
+  movePlannedTraining,
+  deleteSession,
 } from '@/lib/data';
 import { Session, PlannedTraining, WorkoutTemplate, Workout, Category, CATEGORY_LABELS } from '@/lib/types';
 
@@ -21,7 +23,7 @@ const MONTH_NAMES = [
   'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
   'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
 ];
-const CATEGORIES: Category[] = ['oberkoerper', 'unterkoerper', 'ganzkoerper'];
+const CATEGORIES: Category[] = ['oberkoerper', 'unterkoerper', 'ganzkoerper', 'warmup'];
 
 function pad2(n: number) {
   return n.toString().padStart(2, '0');
@@ -89,6 +91,8 @@ function CalendarInner() {
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [pickerCategory, setPickerCategory] = useState<Category>('ganzkoerper');
   const [busy, setBusy] = useState(false);
+  const [movingPlanId, setMovingPlanId] = useState<string | null>(null);
+  const [moveDate, setMoveDate] = useState('');
 
   function reload() {
     if (!user) return;
@@ -192,6 +196,35 @@ function CalendarInner() {
     setBusy(true);
     try {
       await deletePlannedTraining(user.uid, planId);
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Löschen fehlgeschlagen.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleMovePlan(planId: string) {
+    if (!user || !moveDate) return;
+    setBusy(true);
+    try {
+      await movePlannedTraining(user.uid, planId, moveDate);
+      setMovingPlanId(null);
+      setSelectedKey(moveDate);
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Verschieben fehlgeschlagen.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDeleteSession(sessionId: string) {
+    if (!user) return;
+    if (!window.confirm('Dieses Training wirklich löschen?')) return;
+    setBusy(true);
+    try {
+      await deleteSession(user.uid, sessionId);
       await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Löschen fehlgeschlagen.');
@@ -316,16 +349,25 @@ function CalendarInner() {
               {selectedSessions.length > 0 && (
                 <div className="mb-4 space-y-2">
                   {selectedSessions.map((s) => (
-                    <Link
-                      key={s.id}
-                      href={`/session/edit/${s.id}`}
-                      className="block rounded-lg border border-neutral-200 px-3 py-2 text-sm"
-                    >
-                      <p className="font-medium">{s.sourceName}</p>
-                      <p className="text-neutral-500">
-                        {CATEGORY_LABELS[s.category]} · Schmerz {s.preSurvey.painLevel}/10 · bearbeiten
-                      </p>
-                    </Link>
+                    <div key={s.id} className="flex items-center gap-2">
+                      <Link
+                        href={`/session/edit/${s.id}`}
+                        className="block flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+                      >
+                        <p className="font-medium">{s.sourceName}</p>
+                        <p className="text-neutral-500">
+                          {CATEGORY_LABELS[s.category]} · Schmerz {s.preSurvey.painLevel}/10 · bearbeiten
+                        </p>
+                      </Link>
+                      <button
+                        onClick={() => handleDeleteSession(s.id)}
+                        disabled={busy}
+                        className="rounded-lg border border-neutral-200 px-3 py-2 text-sm text-red-600"
+                        title="Training löschen"
+                      >
+                        ×
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}
@@ -334,7 +376,7 @@ function CalendarInner() {
                 <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
                   <p className="font-medium">{selectedPlan.sourceName}</p>
                   <p className="mb-2 text-sm text-neutral-500">{CATEGORY_LABELS[selectedPlan.category]} · geplant</p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Link
                       href={`/session/new?type=${selectedPlan.sourceType}&id=${selectedPlan.sourceId}&date=${selectedPlan.date}&planId=${selectedPlan.id}`}
                       className="rounded-lg bg-neutral-900 px-3 py-1.5 text-sm text-white"
@@ -350,6 +392,16 @@ function CalendarInner() {
                       </Link>
                     )}
                     <button
+                      onClick={() => {
+                        setMovingPlanId(selectedPlan.id);
+                        setMoveDate(selectedPlan.date);
+                      }}
+                      disabled={busy}
+                      className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
+                    >
+                      Verschieben
+                    </button>
+                    <button
                       onClick={() => handleDeletePlan(selectedPlan.id)}
                       disabled={busy}
                       className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
@@ -357,6 +409,27 @@ function CalendarInner() {
                       Löschen
                     </button>
                   </div>
+
+                  {movingPlanId === selectedPlan.id && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <input
+                        type="date"
+                        value={moveDate}
+                        onChange={(e) => setMoveDate(e.target.value)}
+                        className="rounded-lg border border-neutral-300 px-2 py-1 text-sm"
+                      />
+                      <button
+                        onClick={() => handleMovePlan(selectedPlan.id)}
+                        disabled={busy || !moveDate}
+                        className="rounded-lg bg-neutral-900 px-3 py-1.5 text-sm text-white disabled:opacity-50"
+                      >
+                        Bestätigen
+                      </button>
+                      <button onClick={() => setMovingPlanId(null)} className="text-sm text-neutral-500 underline">
+                        Abbrechen
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 

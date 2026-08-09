@@ -108,6 +108,66 @@ export const SEED_EXERCISES: Exercise[] = [
   { id: 'kettlebell-swings', name: 'Kettlebell Swings', category: 'ganzkoerper', logType: 'weight_reps', videoUrl: youtubeSearch('Kettlebell Swings'), painAreas: ['huefte', 'ruecken'] },
   { id: 'springseil', name: 'Springseil', category: 'ganzkoerper', logType: 'time', videoUrl: youtubeSearch('Springseil Technik'), painAreas: ['achillessehne', 'plantarfaszie'] },
   { id: 'crunches', name: 'Crunches', category: 'ganzkoerper', logType: 'weight_reps', videoUrl: youtubeSearch('Crunches'), painAreas: ['ruecken'] },
+
+  // Warm-up / Mobility
+  { id: '90-90-switch', name: '90/90 Switch', category: 'warmup', logType: 'weight_reps', videoUrl: youtubeSearch('90/90 hip switch mobility'), painAreas: ['huefte'] },
+  { id: 'hip-cars', name: 'Hip CARs', category: 'warmup', logType: 'weight_reps', videoUrl: youtubeSearch('Hip CARs controlled articular rotations'), painAreas: ['huefte'] },
+  { id: 'glute-bridge', name: 'Glute Bridge', category: 'warmup', logType: 'weight_reps', videoUrl: youtubeSearch('Glute Bridge'), painAreas: ['huefte', 'ruecken'] },
+  { id: 'hamstring-walkouts', name: 'Hamstring Walkouts', category: 'warmup', logType: 'weight_reps', videoUrl: youtubeSearch('Hamstring Walkouts warm up'), painAreas: ['ruecken', 'knie'] },
+  { id: 'ankle-cars', name: 'Ankle CARs', category: 'warmup', logType: 'weight_reps', videoUrl: youtubeSearch('Ankle CARs controlled articular rotations'), painAreas: ['achillessehne', 'plantarfaszie'] },
+  { id: 'radfahren-warmup', name: 'Radfahren (Warm-up)', category: 'warmup', logType: 'time', videoUrl: youtubeSearch('Radfahren Ergometer leichtes Einrollen') },
+  { id: 'rudern-warmup', name: 'Rudern (Warm-up)', category: 'warmup', logType: 'time', videoUrl: youtubeSearch('Rudergerät leichtes Einrollen') },
+
+  // Achillessehne / Knie / Hüfte — erweiterte Protokoll-Übungen
+  {
+    id: 'single-leg-seated-iso-calf-hold',
+    name: 'Single Leg Seated Iso Calf Hold',
+    category: 'unterkoerper',
+    logType: 'time',
+    videoUrl: youtubeSearch('Single leg seated isometric calf hold soleus'),
+    painAreas: ['achillessehne'],
+    note: 'Sitzend, ein Bein, Ferse anheben und die Position isometrisch halten (Soleus-Fokus). 3-4 Sätze à 30-45 Sek.',
+  },
+  {
+    id: 'single-leg-leg-extension',
+    name: 'Single Leg Leg Extension',
+    category: 'unterkoerper',
+    logType: 'weight_reps',
+    videoUrl: youtubeSearch('Single leg extension machine'),
+    painAreas: ['knie', 'achillessehne'],
+  },
+  {
+    id: 'romanian-deadlift',
+    name: 'Romanian Deadlift',
+    category: 'unterkoerper',
+    logType: 'weight_reps',
+    videoUrl: youtubeSearch('Romanian Deadlift RDL Technik'),
+    painAreas: ['huefte', 'ruecken'],
+  },
+  {
+    id: 'dk-kb-side-bend',
+    name: 'DB/KB Side Bend',
+    category: 'ganzkoerper',
+    logType: 'weight_reps',
+    videoUrl: youtubeSearch('Dumbbell Side Bend Obliques'),
+    painAreas: ['huefte', 'ruecken'],
+  },
+  {
+    id: 'peroneus-beidbeinig',
+    name: 'Peroneus beidbeinig',
+    category: 'unterkoerper',
+    logType: 'weight_reps',
+    videoUrl: youtubeSearch('Peroneal muscle strengthening ankle eversion'),
+    painAreas: ['achillessehne', 'plantarfaszie'],
+  },
+  {
+    id: 'kb-seated-tibialis-raise',
+    name: 'Kettlebell Seated Tibialis Raise',
+    category: 'unterkoerper',
+    logType: 'weight_reps',
+    videoUrl: youtubeSearch('Seated tibialis raise ankle dorsiflexion'),
+    painAreas: ['achillessehne', 'plantarfaszie', 'knie'],
+  },
 ];
 
 export const SEED_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
@@ -128,5 +188,31 @@ export const SEED_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
     name: 'Ganzkörper Basic',
     category: 'ganzkoerper',
     exerciseIds: ['plank', 'kettlebell-swings', 'burpees', 'crunches'],
+  },
+  {
+    id: 'warmup-routine',
+    name: 'Warm-up Routine',
+    category: 'warmup',
+    exerciseIds: ['90-90-switch', 'hip-cars', 'glute-bridge', 'hamstring-walkouts', 'ankle-cars'],
+  },
+  {
+    id: 'training-as-1',
+    name: 'Training AS 1',
+    category: 'unterkoerper',
+    exerciseIds: [
+      '90-90-switch',
+      'hip-cars',
+      'glute-bridge',
+      'hamstring-walkouts',
+      'ankle-cars',
+      'single-leg-seated-iso-calf-hold',
+      'single-leg-leg-extension',
+      'romanian-deadlift',
+      'dk-kb-side-bend',
+      'beinstrecker',
+      'peroneus-beidbeinig',
+      'kb-seated-tibialis-raise',
+    ],
+    painAreas: ['achillessehne'],
   },
 ];

@@ -120,6 +120,10 @@ export async function updateSession(
   await updateDoc(doc(requireDb(), 'users', uid, 'sessions', sessionId), data);
 }
 
+export async function deleteSession(uid: string, sessionId: string): Promise<void> {
+  await deleteDoc(doc(requireDb(), 'users', uid, 'sessions', sessionId));
+}
+
 export async function getPlannedTrainings(uid: string): Promise<PlannedTraining[]> {
   const snap = await getDocs(collection(requireDb(), 'users', uid, 'plannedTrainings'));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as PlannedTraining);
@@ -135,6 +139,10 @@ export async function createPlannedTraining(
 
 export async function deletePlannedTraining(uid: string, id: string): Promise<void> {
   await deleteDoc(doc(requireDb(), 'users', uid, 'plannedTrainings', id));
+}
+
+export async function movePlannedTraining(uid: string, id: string, newDate: string): Promise<void> {
+  await updateDoc(doc(requireDb(), 'users', uid, 'plannedTrainings', id), { date: newDate });
 }
 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
