@@ -12,6 +12,7 @@ import {
   getWorkoutTemplates,
   getUserWorkouts,
   createPlannedTraining,
+  createRecurringPlannedTrainings,
   deletePlannedTraining,
   movePlannedTraining,
   deleteSession,
@@ -35,6 +36,13 @@ function dateKey(year: number, month: number, day: number) {
 
 type GridCell = { type: 'pad' } | { type: 'day'; day: number; key: string };
 type ViewMode = 'list' | 'week' | 'month';
+type RepeatMode = 'once' | 'daily' | 'every2' | 'weekly' | 'custom';
+
+const REPEAT_INTERVAL_DAYS: Partial<Record<RepeatMode, number>> = {
+  daily: 1,
+  every2: 2,
+  weekly: 7,
+};
 
 function buildMonthGrid(year: number, month: number): GridCell[] {
   const startWeekday = (new Date(year, month, 1).getDay() + 6) % 7; // Mo=0 .. So=6
@@ -93,6 +101,8 @@ function CalendarInner() {
   const [busy, setBusy] = useState(false);
   const [movingPlanId, setMovingPlanId] = useState<string | null>(null);
   const [moveDate, setMoveDate] = useState('');
+  const [repeatMode, setRepeatMode] = useState<RepeatMode>('once');
+  const [customDays, setCustomDays] = useState(3);
 
   function reload() {
     if (!user) return;
@@ -116,6 +126,10 @@ function CalendarInner() {
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  useEffect(() => {
+    setRepeatMode('once');
+  }, [selectedKey]);
 
   const sessionsByDate = useMemo(() => {
     const map = new Map<string, Session[]>();
@@ -175,14 +189,21 @@ function CalendarInner() {
     if (!user || !selectedKey) return;
     setBusy(true);
     try {
-      await createPlannedTraining(user.uid, {
+      const plannedData = {
         date: selectedKey,
         sourceType,
         sourceId: source.id,
         sourceName: source.name,
         category: source.category,
         createdAt: Date.now(),
-      });
+      };
+      const intervalDays = REPEAT_INTERVAL_DAYS[repeatMode] ?? (repeatMode === 'custom' ? customDays : undefined);
+      if (intervalDays) {
+        await createRecurringPlannedTrainings(user.uid, plannedData, intervalDays);
+      } else {
+        await createPlannedTraining(user.uid, plannedData);
+      }
+      setRepeatMode('once');
       await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Planen fehlgeschlagen.');
@@ -438,6 +459,52 @@ function CalendarInner() {
                   <p className="mb-2 text-sm text-neutral-500">
                     {isStrictlyFuture ? 'Training für diesen Tag planen' : 'Training für diesen Tag nachtragen'}
                   </p>
+
+                  {isStrictlyFuture && (
+                    <div className="mb-3">
+                      <label className="mb-1 block text-xs font-medium text-neutral-500">Wiederholen</label>
+                      <div className="flex flex-wrap gap-2">
+                        {(
+                          [
+                            ['once', 'Einmalig'],
+                            ['daily', 'Täglich'],
+                            ['every2', 'Alle 2 Tage'],
+                            ['weekly', 'Wöchentlich'],
+                            ['custom', 'Alle X Tage'],
+                          ] as [RepeatMode, string][]
+                        ).map(([mode, label]) => (
+                          <button
+                            key={mode}
+                            onClick={() => setRepeatMode(mode)}
+                            className={clsx(
+                              'rounded-full px-2 py-1 text-xs',
+                              repeatMode === mode ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'
+                            )}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      {repeatMode === 'custom' && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <input
+                            type="number"
+                            min={1}
+                            value={customDays}
+                            onChange={(e) => setCustomDays(Math.max(1, Number(e.target.value)))}
+                            className="w-20 rounded-lg border border-neutral-300 px-2 py-1 text-sm"
+                          />
+                          <span className="text-sm text-neutral-500">Tage Rhythmus</span>
+                        </div>
+                      )}
+                      {repeatMode !== 'once' && (
+                        <p className="mt-1 text-xs text-neutral-400">
+                          Erstellt die nächsten 12 Termine in diesem Rhythmus.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   <div className="mb-3 flex gap-2">
                     {CATEGORIES.map((c) => (
                       <button

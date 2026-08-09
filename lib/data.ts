@@ -7,6 +7,7 @@ import {
   updateDoc,
   deleteDoc,
   setDoc,
+  writeBatch,
   query,
   orderBy,
 } from 'firebase/firestore';
@@ -143,6 +144,30 @@ export async function deletePlannedTraining(uid: string, id: string): Promise<vo
 
 export async function movePlannedTraining(uid: string, id: string, newDate: string): Promise<void> {
   await updateDoc(doc(requireDb(), 'users', uid, 'plannedTrainings', id), { date: newDate });
+}
+
+const MAX_RECURRING_OCCURRENCES = 12;
+
+function addDaysToDateKey(dateKey: string, days: number): string {
+  const [y, m, d] = dateKey.split('-').map(Number);
+  const date = new Date(y, m - 1, d + days);
+  const pad2 = (n: number) => n.toString().padStart(2, '0');
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
+
+export async function createRecurringPlannedTrainings(
+  uid: string,
+  planned: Omit<PlannedTraining, 'id'>,
+  intervalDays: number
+): Promise<void> {
+  const batch = writeBatch(requireDb());
+  const collectionRef = collection(requireDb(), 'users', uid, 'plannedTrainings');
+  for (let i = 0; i < MAX_RECURRING_OCCURRENCES; i++) {
+    const date = addDaysToDateKey(planned.date, i * intervalDays);
+    const ref = doc(collectionRef);
+    batch.set(ref, { ...planned, date });
+  }
+  await batch.commit();
 }
 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {

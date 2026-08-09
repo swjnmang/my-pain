@@ -58,9 +58,16 @@ function TrainingListInner() {
 
       <Link
         href="/training/builder"
-        className="mb-6 block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-600"
+        className="mb-2 block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-600"
       >
         + Eigenes Training erstellen
+      </Link>
+
+      <Link
+        href="/exercises/new"
+        className="mb-6 block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-600"
+      >
+        + Eigene Übung erstellen
       </Link>
 
       {loading && <p className="text-sm text-neutral-500">Lädt…</p>}
