@@ -146,6 +146,24 @@ export async function movePlannedTraining(uid: string, id: string, newDate: stri
   await updateDoc(doc(requireDb(), 'users', uid, 'plannedTrainings', id), { date: newDate });
 }
 
+export async function updatePlannedTrainingSource(
+  uid: string,
+  id: string,
+  source: { sourceType: 'template' | 'workout'; sourceId: string; sourceName: string }
+): Promise<void> {
+  await updateDoc(doc(requireDb(), 'users', uid, 'plannedTrainings', id), source);
+}
+
+export async function forkWorkoutTemplateToWorkout(uid: string, template: WorkoutTemplate): Promise<string> {
+  const ref = await addDoc(collection(requireDb(), 'users', uid, 'workouts'), {
+    name: template.name,
+    category: template.category,
+    exerciseIds: template.exerciseIds,
+    createdAt: Date.now(),
+  });
+  return ref.id;
+}
+
 const MAX_RECURRING_OCCURRENCES = 12;
 
 function addDaysToDateKey(dateKey: string, days: number): string {

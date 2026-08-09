@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import clsx from 'clsx';
 import RequireAuth from '@/components/RequireAuth';
@@ -15,6 +16,8 @@ import {
   createRecurringPlannedTrainings,
   deletePlannedTraining,
   movePlannedTraining,
+  updatePlannedTrainingSource,
+  forkWorkoutTemplateToWorkout,
   deleteSession,
 } from '@/lib/data';
 import { Session, PlannedTraining, WorkoutTemplate, Workout, Category, CATEGORY_LABELS } from '@/lib/types';
@@ -85,6 +88,7 @@ function buildWeekGrid(anchor: Date): GridCell[] {
 
 function CalendarInner() {
   const { user } = useAuth();
+  const router = useRouter();
   const today = new Date();
   const todayKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
 
@@ -207,6 +211,34 @@ function CalendarInner() {
       await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Planen fehlgeschlagen.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleEditPlan(plan: PlannedTraining) {
+    if (!user) return;
+    if (plan.sourceType === 'workout') {
+      router.push(`/training/edit/${plan.sourceId}`);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const template = templates.find((t) => t.id === plan.sourceId);
+      if (!template) {
+        setError('Trainingsvorlage nicht gefunden.');
+        return;
+      }
+      const newWorkoutId = await forkWorkoutTemplateToWorkout(user.uid, template);
+      await updatePlannedTrainingSource(user.uid, plan.id, {
+        sourceType: 'workout',
+        sourceId: newWorkoutId,
+        sourceName: template.name,
+      });
+      router.push(`/training/edit/${newWorkoutId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Bearbeiten fehlgeschlagen.');
     } finally {
       setBusy(false);
     }
@@ -406,14 +438,6 @@ function CalendarInner() {
                     >
                       Jetzt starten
                     </Link>
-                    {selectedPlan.sourceType === 'workout' && (
-                      <Link
-                        href={`/training/edit/${selectedPlan.sourceId}`}
-                        className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
-                      >
-                        Bearbeiten
-                      </Link>
-                    )}
                     <button
                       onClick={() => {
                         setMovingPlanId(selectedPlan.id);
@@ -423,6 +447,13 @@ function CalendarInner() {
                       className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
                     >
                       Verschieben
+                    </button>
+                    <button
+                      onClick={() => handleEditPlan(selectedPlan)}
+                      disabled={busy}
+                      className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
+                    >
+                      Bearbeiten
                     </button>
                     <button
                       onClick={() => handleDeletePlan(selectedPlan.id)}
