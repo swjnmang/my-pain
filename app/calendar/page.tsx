@@ -257,6 +257,8 @@ function CalendarInner() {
   const selectedSessions = selectedKey ? sessionsByDate.get(selectedKey) ?? [] : [];
   const selectedPlan = selectedKey ? plannedByDate.get(selectedKey) : undefined;
   const isStrictlyFuture = selectedKey ? selectedKey > todayKey : false;
+  const isToday = selectedKey === todayKey;
+  const canPlan = isStrictlyFuture || isToday;
 
   const filteredTemplates = templates.filter((t) => t.category === pickerCategory);
   const filteredOwn = ownWorkouts.filter((w) => w.category === pickerCategory);
@@ -457,10 +459,10 @@ function CalendarInner() {
               {selectedSessions.length === 0 && !selectedPlan && (
                 <div>
                   <p className="mb-2 text-sm text-neutral-500">
-                    {isStrictlyFuture ? 'Training für diesen Tag planen' : 'Training für diesen Tag nachtragen'}
+                    {canPlan ? 'Training für diesen Tag planen' : 'Training für diesen Tag nachtragen'}
                   </p>
 
-                  {isStrictlyFuture && (
+                  {canPlan && (
                     <div className="mb-3">
                       <label className="mb-1 block text-xs font-medium text-neutral-500">Wiederholen</label>
                       <div className="flex flex-wrap gap-2">
@@ -539,6 +541,16 @@ function CalendarInner() {
                             {w.name}
                           </Link>
                         )}
+                        {isToday && (
+                          <button
+                            disabled={busy}
+                            onClick={() => handlePlan(w, 'workout')}
+                            title="Nur für heute planen, ohne sofort zu starten"
+                            className="whitespace-nowrap rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+                          >
+                            Nur planen
+                          </button>
+                        )}
                         <Link
                           href={`/training/edit/${w.id}`}
                           className="rounded-lg border border-neutral-200 px-3 py-2 text-sm"
@@ -548,26 +560,36 @@ function CalendarInner() {
                         </Link>
                       </div>
                     ))}
-                    {filteredTemplates.map((t) =>
-                      isStrictlyFuture ? (
-                        <button
-                          key={t.id}
-                          disabled={busy}
-                          onClick={() => handlePlan(t, 'template')}
-                          className="block w-full rounded-lg border border-neutral-200 px-3 py-2 text-left text-sm"
-                        >
-                          {t.name}
-                        </button>
-                      ) : (
-                        <Link
-                          key={t.id}
-                          href={`/session/new?type=template&id=${t.id}&date=${selectedKey}`}
-                          className="block rounded-lg border border-neutral-200 px-3 py-2 text-sm"
-                        >
-                          {t.name}
-                        </Link>
-                      )
-                    )}
+                    {filteredTemplates.map((t) => (
+                      <div key={t.id} className="flex items-center gap-2">
+                        {isStrictlyFuture ? (
+                          <button
+                            disabled={busy}
+                            onClick={() => handlePlan(t, 'template')}
+                            className="block flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-left text-sm"
+                          >
+                            {t.name}
+                          </button>
+                        ) : (
+                          <Link
+                            href={`/session/new?type=template&id=${t.id}&date=${selectedKey}`}
+                            className="block flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+                          >
+                            {t.name}
+                          </Link>
+                        )}
+                        {isToday && (
+                          <button
+                            disabled={busy}
+                            onClick={() => handlePlan(t, 'template')}
+                            title="Nur für heute planen, ohne sofort zu starten"
+                            className="whitespace-nowrap rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+                          >
+                            Nur planen
+                          </button>
+                        )}
+                      </div>
+                    ))}
                     {filteredTemplates.length === 0 && filteredOwn.length === 0 && (
                       <p className="text-sm text-neutral-400">Keine Trainings in dieser Kategorie.</p>
                     )}
