@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import RequireAuth from '@/components/RequireAuth';
 import AppShell from '@/components/AppShell';
 import ExerciseSetEditor from '@/components/ExerciseSetEditor';
@@ -186,12 +187,22 @@ function SessionInner() {
             />
           </div>
 
-          <button
-            onClick={() => setStep('log')}
-            className="w-full rounded-lg bg-neutral-900 px-4 py-2.5 text-base font-medium text-white"
-          >
-            Training starten
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setStep('log')}
+              className="flex-1 rounded-lg bg-neutral-900 px-4 py-2.5 text-base font-medium text-white"
+            >
+              Training starten
+            </button>
+            {type === 'workout' && (
+              <Link
+                href={`/training/edit/${id}`}
+                className="flex items-center justify-center rounded-lg border border-neutral-300 px-4 py-2.5 text-base font-medium"
+              >
+                Training bearbeiten
+              </Link>
+            )}
+          </div>
         </div>
       )}
 

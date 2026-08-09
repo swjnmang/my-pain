@@ -454,26 +454,33 @@ function CalendarInner() {
                   </div>
 
                   <div className="space-y-2">
-                    {filteredOwn.map((w) =>
-                      isStrictlyFuture ? (
-                        <button
-                          key={w.id}
-                          disabled={busy}
-                          onClick={() => handlePlan(w, 'workout')}
-                          className="block w-full rounded-lg border border-neutral-200 px-3 py-2 text-left text-sm"
-                        >
-                          {w.name}
-                        </button>
-                      ) : (
+                    {filteredOwn.map((w) => (
+                      <div key={w.id} className="flex items-center gap-2">
+                        {isStrictlyFuture ? (
+                          <button
+                            disabled={busy}
+                            onClick={() => handlePlan(w, 'workout')}
+                            className="block flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-left text-sm"
+                          >
+                            {w.name}
+                          </button>
+                        ) : (
+                          <Link
+                            href={`/session/new?type=workout&id=${w.id}&date=${selectedKey}`}
+                            className="block flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+                          >
+                            {w.name}
+                          </Link>
+                        )}
                         <Link
-                          key={w.id}
-                          href={`/session/new?type=workout&id=${w.id}&date=${selectedKey}`}
-                          className="block rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+                          href={`/training/edit/${w.id}`}
+                          className="rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+                          title="Training bearbeiten"
                         >
-                          {w.name}
+                          ✎
                         </Link>
-                      )
-                    )}
+                      </div>
+                    ))}
                     {filteredTemplates.map((t) =>
                       isStrictlyFuture ? (
                         <button

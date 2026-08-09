@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { LogType, WeightRepsSet, TimeSet } from '@/lib/types';
 
 interface Props {
@@ -13,11 +14,13 @@ interface Props {
   note?: string;
 }
 
+type TimeUnit = 'sec' | 'min';
+
 function formatSets(logType: LogType, sets: WeightRepsSet[] | TimeSet[]): string {
   if (logType === 'time') {
     return (sets as TimeSet[]).map((s) => `${s.durationSec}s`).join(', ');
   }
-  return (sets as WeightRepsSet[]).map((s) => `${s.weight}kg × ${s.reps}`).join(', ');
+  return (sets as WeightRepsSet[]).map((s) => `${s.reps} × ${s.weight}kg`).join(', ');
 }
 
 export default function ExerciseSetEditor({
@@ -30,6 +33,8 @@ export default function ExerciseSetEditor({
   previousSets,
   note,
 }: Props) {
+  const [timeUnit, setTimeUnit] = useState<TimeUnit>('sec');
+
   function addSet() {
     const newSet = logType === 'time' ? { durationSec: 0 } : { weight: 0, reps: 0 };
     onChange([...sets, newSet] as WeightRepsSet[] | TimeSet[]);
@@ -39,6 +44,11 @@ export default function ExerciseSetEditor({
     const next = [...sets] as unknown as Record<string, number>[];
     next[index] = { ...next[index], [field]: value };
     onChange(next as unknown as WeightRepsSet[] | TimeSet[]);
+  }
+
+  function updateDuration(index: number, displayValue: number) {
+    const durationSec = timeUnit === 'min' ? displayValue * 60 : displayValue;
+    updateSet(index, 'durationSec', durationSec);
   }
 
   return (
@@ -72,7 +82,29 @@ export default function ExerciseSetEditor({
         <p className="mt-2 text-xs text-neutral-400">Letztes Mal: {formatSets(logType, previousSets)}</p>
       )}
 
-      <div className="mt-3 space-y-2">
+      <div className="mt-3 flex items-center gap-2">
+        <span className="w-6" />
+        {logType === 'weight_reps' ? (
+          <>
+            <span className="flex-1 text-xs font-medium text-neutral-500">Anzahl der Wiederholungen</span>
+            <span className="flex-1 text-xs font-medium text-neutral-500">Gewicht/Zeit (kg)</span>
+          </>
+        ) : (
+          <div className="flex flex-1 items-center justify-between">
+            <span className="text-xs font-medium text-neutral-500">Gewicht/Zeit</span>
+            <select
+              value={timeUnit}
+              onChange={(e) => setTimeUnit(e.target.value as TimeUnit)}
+              className="rounded border border-neutral-300 px-1 py-0.5 text-xs"
+            >
+              <option value="sec">Sekunden</option>
+              <option value="min">Minuten</option>
+            </select>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-1 space-y-2">
         {sets.map((set, i) => (
           <div key={i} className="flex items-center gap-2">
             <span className="w-6 text-sm text-neutral-400">{i + 1}.</span>
@@ -80,9 +112,16 @@ export default function ExerciseSetEditor({
               <input
                 type="number"
                 min={0}
-                placeholder="Sekunden"
-                value={(set as TimeSet).durationSec || ''}
-                onChange={(e) => updateSet(i, 'durationSec', Number(e.target.value))}
+                step={timeUnit === 'min' ? 0.1 : 1}
+                placeholder={timeUnit === 'min' ? 'Minuten' : 'Sekunden'}
+                value={
+                  (set as TimeSet).durationSec
+                    ? timeUnit === 'min'
+                      ? (set as TimeSet).durationSec / 60
+                      : (set as TimeSet).durationSec
+                    : ''
+                }
+                onChange={(e) => updateDuration(i, Number(e.target.value))}
                 className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-base"
               />
             ) : (
@@ -90,17 +129,17 @@ export default function ExerciseSetEditor({
                 <input
                   type="number"
                   min={0}
-                  placeholder="kg"
-                  value={(set as WeightRepsSet).weight || ''}
-                  onChange={(e) => updateSet(i, 'weight', Number(e.target.value))}
+                  placeholder="Wdh."
+                  value={(set as WeightRepsSet).reps || ''}
+                  onChange={(e) => updateSet(i, 'reps', Number(e.target.value))}
                   className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-base"
                 />
                 <input
                   type="number"
                   min={0}
-                  placeholder="Wdh."
-                  value={(set as WeightRepsSet).reps || ''}
-                  onChange={(e) => updateSet(i, 'reps', Number(e.target.value))}
+                  placeholder="kg"
+                  value={(set as WeightRepsSet).weight || ''}
+                  onChange={(e) => updateSet(i, 'weight', Number(e.target.value))}
                   className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-base"
                 />
               </>
