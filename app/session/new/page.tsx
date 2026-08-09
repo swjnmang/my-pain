@@ -3,19 +3,29 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import clsx from 'clsx';
 import RequireAuth from '@/components/RequireAuth';
 import AppShell from '@/components/AppShell';
 import ExerciseSetEditor from '@/components/ExerciseSetEditor';
 import { useAuth } from '@/lib/AuthContext';
 import {
   getAllExercisesForUser,
+  getUserExercises,
   getWorkoutTemplate,
   getUserWorkout,
   getSessions,
   createSession,
   deletePlannedTraining,
 } from '@/lib/data';
-import { Exercise, ExerciseLog, PreSurvey, Category, WeightRepsSet, TimeSet } from '@/lib/types';
+import {
+  Exercise,
+  ExerciseLog,
+  PreSurvey,
+  Category,
+  CATEGORY_LABELS,
+  WeightRepsSet,
+  TimeSet,
+} from '@/lib/types';
 import { getDefaultSets } from '@/lib/exerciseDefaults';
 import {
   getActiveSessionDraft,
@@ -23,6 +33,8 @@ import {
   clearActiveSessionDraft,
   draftMatches,
 } from '@/lib/activeSession';
+
+const CATEGORIES: Category[] = ['oberkoerper', 'unterkoerper', 'ganzkoerper', 'warmup'];
 
 type Step = 'survey' | 'log';
 
@@ -48,9 +60,13 @@ function SessionInner() {
   const [sourceName, setSourceName] = useState('');
   const [category, setCategory] = useState<Category>('ganzkoerper');
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [allExercises, setAllExercises] = useState<Exercise[]>([]);
+  const [ownExerciseIds, setOwnExerciseIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showAddPicker, setShowAddPicker] = useState(false);
+  const [addCategory, setAddCategory] = useState<Category>('oberkoerper');
 
   const [survey, setSurvey] = useState<PreSurvey>({
     painLevel: 0,
@@ -65,10 +81,13 @@ function SessionInner() {
   useEffect(() => {
     if (!user || !type || !id) return;
     async function load() {
-      const [allExercises, pastSessions] = await Promise.all([
+      const [fetchedExercises, ownExercises, pastSessions] = await Promise.all([
         getAllExercisesForUser(user!.uid),
+        getUserExercises(user!.uid),
         getSessions(user!.uid),
       ]);
+      setAllExercises(fetchedExercises);
+      setOwnExerciseIds(new Set(ownExercises.map((ex) => ex.id)));
       const source =
         type === 'template' ? await getWorkoutTemplate(id!) : await getUserWorkout(user!.uid, id!);
       if (!source) {
@@ -78,9 +97,8 @@ function SessionInner() {
       setSourceName(source.name);
       setCategory(source.category);
       const sourceExercises = source.exerciseIds
-        .map((exId) => allExercises.find((e) => e.id === exId))
+        .map((exId) => fetchedExercises.find((e) => e.id === exId))
         .filter((e): e is Exercise => Boolean(e));
-      setExercises(sourceExercises);
 
       const initialLogs: Record<string, WeightRepsSet[] | TimeSet[]> = {};
       const previous: Record<string, WeightRepsSet[] | TimeSet[]> = {};
@@ -101,10 +119,15 @@ function SessionInner() {
       const effectiveDate = dateParam || new Date().toISOString().slice(0, 10);
       const draft = getActiveSessionDraft(user!.uid);
       if (draftMatches(draft, type, id, effectiveDate, planId)) {
+        const draftExercises = (draft.exerciseIds ?? [])
+          .map((exId) => fetchedExercises.find((e) => e.id === exId))
+          .filter((e): e is Exercise => Boolean(e));
+        setExercises(draftExercises.length > 0 ? draftExercises : sourceExercises);
         setSurvey(draft.survey);
         setLogs(draft.logs);
         setStep('log');
       } else {
+        setExercises(sourceExercises);
         setLogs(initialLogs);
       }
     }
@@ -126,10 +149,26 @@ function SessionInner() {
       category,
       survey,
       logs,
+      exerciseIds: exercises.map((ex) => ex.id),
       startedAt: existing?.startedAt ?? Date.now(),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, logs, survey, user]);
+  }, [step, logs, survey, exercises, user]);
+
+  function removeExercise(exerciseId: string) {
+    setExercises((prev) => prev.filter((ex) => ex.id !== exerciseId));
+    setLogs((prev) => {
+      const next = { ...prev };
+      delete next[exerciseId];
+      return next;
+    });
+  }
+
+  function addExercise(ex: Exercise) {
+    setExercises((prev) => (prev.some((e) => e.id === ex.id) ? prev : [...prev, ex]));
+    setLogs((prev) => (prev[ex.id] ? prev : { ...prev, [ex.id]: getDefaultSets(ex.id, ex.logType) }));
+    setShowAddPicker(false);
+  }
 
   async function finishSession() {
     if (!user) return;
@@ -242,6 +281,12 @@ function SessionInner() {
 
       {!loading && step === 'log' && (
         <div className="space-y-6 pb-24">
+          {exercises.length === 0 && (
+            <p className="text-sm text-neutral-500">
+              Keine Übungen mehr in diesem Training. Füge unten mindestens eine hinzu, um fortzufahren.
+            </p>
+          )}
+
           {exercises.map((ex) => (
             <ExerciseSetEditor
               key={ex.id}
@@ -253,13 +298,70 @@ function SessionInner() {
               images={ex.images}
               previousSets={previousLogs[ex.id]}
               note={ex.note}
+              editHref={ownExerciseIds.has(ex.id) ? `/exercises/${ex.id}/edit` : undefined}
+              onRemove={() => removeExercise(ex.id)}
             />
           ))}
+
+          {!showAddPicker ? (
+            <button
+              onClick={() => setShowAddPicker(true)}
+              className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-600"
+            >
+              + Übung hinzufügen
+            </button>
+          ) : (
+            <div className="rounded-lg border border-neutral-200 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="font-medium">Übung hinzufügen</p>
+                <button
+                  onClick={() => setShowAddPicker(false)}
+                  className="rounded-lg border border-neutral-200 px-2 py-1 text-xs"
+                >
+                  Schließen
+                </button>
+              </div>
+
+              <div className="mb-3 flex gap-2 overflow-x-auto">
+                {CATEGORIES.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setAddCategory(c)}
+                    className={clsx(
+                      'shrink-0 rounded-full px-3 py-1.5 text-sm',
+                      addCategory === c ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'
+                    )}
+                  >
+                    {CATEGORY_LABELS[c]}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-2">
+                {allExercises
+                  .filter((ex) => ex.category === addCategory && !exercises.some((e) => e.id === ex.id))
+                  .map((ex) => (
+                    <button
+                      key={ex.id}
+                      onClick={() => addExercise(ex)}
+                      className="flex w-full items-center justify-between rounded-lg border border-neutral-200 px-4 py-3 text-left"
+                    >
+                      <span>{ex.name}</span>
+                    </button>
+                  ))}
+                {allExercises.filter(
+                  (ex) => ex.category === addCategory && !exercises.some((e) => e.id === ex.id)
+                ).length === 0 && (
+                  <p className="text-sm text-neutral-400">Keine weiteren Übungen in dieser Kategorie.</p>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="fixed inset-x-0 bottom-16 border-t border-neutral-200 bg-white p-4">
             <button
               onClick={finishSession}
-              disabled={saving}
+              disabled={saving || exercises.length === 0}
               className="w-full rounded-lg bg-neutral-900 px-4 py-2.5 text-base font-medium text-white disabled:opacity-50"
             >
               {saving ? 'Speichert…' : 'Training abschließen'}

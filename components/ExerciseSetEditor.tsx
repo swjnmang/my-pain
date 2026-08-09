@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { LogType, WeightRepsSet, TimeSet } from '@/lib/types';
 
 interface Props {
@@ -12,6 +13,8 @@ interface Props {
   images?: string[];
   previousSets?: WeightRepsSet[] | TimeSet[];
   note?: string;
+  editHref?: string;
+  onRemove?: () => void;
 }
 
 type TimeUnit = 'sec' | 'min';
@@ -32,6 +35,8 @@ export default function ExerciseSetEditor({
   images,
   previousSets,
   note,
+  editHref,
+  onRemove,
 }: Props) {
   const [timeUnit, setTimeUnit] = useState<TimeUnit>('sec');
 
@@ -53,7 +58,31 @@ export default function ExerciseSetEditor({
 
   return (
     <div className="rounded-lg border border-neutral-200 p-4">
-      <p className="font-medium">{name}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="font-medium">{name}</p>
+        {(editHref || onRemove) && (
+          <div className="flex shrink-0 items-center gap-1">
+            {editHref && (
+              <Link
+                href={editHref}
+                className="rounded-lg border border-neutral-200 px-2 py-1 text-xs"
+                title="Übung bearbeiten"
+              >
+                ✎
+              </Link>
+            )}
+            {onRemove && (
+              <button
+                onClick={onRemove}
+                className="rounded-lg border border-neutral-200 px-2 py-1 text-xs text-red-600"
+                title="Übung aus Training entfernen"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        )}
+      </div>
 
       {note && (
         <p className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-800">{note}</p>
