@@ -168,6 +168,19 @@ export const SEED_EXERCISES: Exercise[] = [
     videoUrl: youtubeSearch('Seated tibialis raise ankle dorsiflexion'),
     painAreas: ['achillessehne', 'plantarfaszie', 'knie'],
   },
+
+  // Training AS 2 / AS 3 — weitere Achillessehne-Übungen
+  { id: 'hip-airplanes', name: 'Hip Airplanes', category: 'warmup', logType: 'weight_reps', videoUrl: youtubeSearch('Hip Airplanes exercise balance'), painAreas: ['huefte'] },
+  { id: 'hand-supported-single-leg-db-rdl', name: 'Hand Supported Single Leg DB RDL', category: 'unterkoerper', logType: 'weight_reps', videoUrl: youtubeSearch('Hand supported single leg RDL dumbbell'), painAreas: ['huefte', 'ruecken'] },
+  { id: 'standing-cable-wood-choppers', name: 'Standing Cable Wood Choppers', category: 'ganzkoerper', logType: 'weight_reps', videoUrl: youtubeSearch('Standing Cable Wood Choppers Technik'), painAreas: ['huefte', 'ruecken'] },
+  { id: 'hand-supported-db-bulgarian-split-squat', name: 'Hand Supported DB Bulgarian Split Squat', category: 'unterkoerper', logType: 'weight_reps', videoUrl: youtubeSearch('Hand supported Bulgarian Split Squat dumbbell'), painAreas: ['knie', 'huefte'] },
+  { id: 'dead-bug-kb-pullover', name: 'Dead Bug w/KB Pullover', category: 'ganzkoerper', logType: 'weight_reps', videoUrl: youtubeSearch('Dead Bug Kettlebell Pullover core'), painAreas: ['ruecken'] },
+  { id: 'tibialis-anterior-tap-tap', name: 'Tibialis Anterior Tap Tap', category: 'unterkoerper', logType: 'weight_reps', videoUrl: youtubeSearch('Tibialis anterior tap tap raise'), painAreas: ['achillessehne', 'plantarfaszie', 'knie'] },
+  { id: 'single-leg-glute-bridge-iso-hold', name: 'Single Leg Glute Bridge Iso Hold', category: 'warmup', logType: 'time', videoUrl: youtubeSearch('Single leg glute bridge isometric hold'), painAreas: ['huefte', 'ruecken'] },
+  { id: 'toe-elevated-calf-raise', name: 'Toe Elevated Calf Raise', category: 'unterkoerper', logType: 'weight_reps', videoUrl: youtubeSearch('Toe elevated deficit calf raise'), painAreas: ['achillessehne'] },
+  { id: 'staggered-stance-hip-thrust', name: 'Staggered Stance Hip Thrust', category: 'unterkoerper', logType: 'weight_reps', videoUrl: youtubeSearch('Staggered stance hip thrust Technik'), painAreas: ['huefte'] },
+  { id: 'adduktionsmaschine', name: 'Adduktionsmaschine', category: 'unterkoerper', logType: 'weight_reps', videoUrl: youtubeSearch('Adduktionsmaschine'), painAreas: ['huefte'] },
+  { id: 'tibialis-posterior-training', name: 'Tibialis Posterior Training', category: 'unterkoerper', logType: 'weight_reps', videoUrl: youtubeSearch('Tibialis posterior strengthening inversion'), painAreas: ['achillessehne', 'plantarfaszie'] },
 ];
 
 export const SEED_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
@@ -212,6 +225,38 @@ export const SEED_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
       'beinstrecker',
       'peroneus-beidbeinig',
       'kb-seated-tibialis-raise',
+    ],
+    painAreas: ['achillessehne'],
+  },
+  {
+    id: 'training-as-2',
+    name: 'Training AS 2',
+    category: 'unterkoerper',
+    exerciseIds: [
+      'ankle-cars',
+      'hip-airplanes',
+      'wadenheben-hsr',
+      'hand-supported-single-leg-db-rdl',
+      'standing-cable-wood-choppers',
+      'hand-supported-db-bulgarian-split-squat',
+      'dead-bug-kb-pullover',
+      'tibialis-anterior-tap-tap',
+    ],
+    painAreas: ['achillessehne'],
+  },
+  {
+    id: 'training-as-3',
+    name: 'Training AS 3',
+    category: 'unterkoerper',
+    exerciseIds: [
+      'hip-airplanes',
+      'single-leg-glute-bridge-iso-hold',
+      'toe-elevated-calf-raise',
+      'staggered-stance-hip-thrust',
+      'adduktionsmaschine',
+      'hueftabduktion',
+      'beinpresse',
+      'tibialis-posterior-training',
     ],
     painAreas: ['achillessehne'],
   },
