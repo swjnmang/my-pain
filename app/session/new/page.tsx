@@ -17,6 +17,12 @@ import {
 } from '@/lib/data';
 import { Exercise, ExerciseLog, PreSurvey, Category, WeightRepsSet, TimeSet } from '@/lib/types';
 import { getDefaultSets } from '@/lib/exerciseDefaults';
+import {
+  getActiveSessionDraft,
+  saveActiveSessionDraft,
+  clearActiveSessionDraft,
+  draftMatches,
+} from '@/lib/activeSession';
 
 type Step = 'survey' | 'log';
 
@@ -90,13 +96,40 @@ function SessionInner() {
           initialLogs[ex.id] = getDefaultSets(ex.id, ex.logType);
         }
       }
-      setLogs(initialLogs);
       setPreviousLogs(previous);
+
+      const effectiveDate = dateParam || new Date().toISOString().slice(0, 10);
+      const draft = getActiveSessionDraft(user!.uid);
+      if (draftMatches(draft, type, id, effectiveDate, planId)) {
+        setSurvey(draft.survey);
+        setLogs(draft.logs);
+        setStep('log');
+      } else {
+        setLogs(initialLogs);
+      }
     }
     load()
       .catch((err) => setError(err instanceof Error ? err.message : 'Fehler beim Laden.'))
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, type, id]);
+
+  useEffect(() => {
+    if (step !== 'log' || !type || !id || !user) return;
+    const existing = getActiveSessionDraft(user.uid);
+    saveActiveSessionDraft(user.uid, {
+      type: type as 'template' | 'workout',
+      id,
+      date: dateParam || new Date().toISOString().slice(0, 10),
+      planId: planId ?? null,
+      sourceName,
+      category,
+      survey,
+      logs,
+      startedAt: existing?.startedAt ?? Date.now(),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, logs, survey, user]);
 
   async function finishSession() {
     if (!user) return;
@@ -121,6 +154,7 @@ function SessionInner() {
       if (planId) {
         await deletePlannedTraining(user.uid, planId);
       }
+      clearActiveSessionDraft(user.uid);
       router.replace('/history');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Speichern fehlgeschlagen.');
