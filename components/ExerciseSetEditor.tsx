@@ -122,7 +122,7 @@ export default function ExerciseSetEditor({
                     : ''
                 }
                 onChange={(e) => updateDuration(i, Number(e.target.value))}
-                className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-base"
+                className="min-w-0 flex-1 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm sm:px-3 sm:py-2 sm:text-base"
               />
             ) : (
               <>
@@ -132,7 +132,7 @@ export default function ExerciseSetEditor({
                   placeholder="Wdh."
                   value={(set as WeightRepsSet).reps || ''}
                   onChange={(e) => updateSet(i, 'reps', Number(e.target.value))}
-                  className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-base"
+                  className="min-w-0 flex-1 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm sm:px-3 sm:py-2 sm:text-base"
                 />
                 <input
                   type="number"
@@ -140,7 +140,7 @@ export default function ExerciseSetEditor({
                   placeholder="kg"
                   value={(set as WeightRepsSet).weight || ''}
                   onChange={(e) => updateSet(i, 'weight', Number(e.target.value))}
-                  className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-base"
+                  className="min-w-0 flex-1 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm sm:px-3 sm:py-2 sm:text-base"
                 />
               </>
             )}
