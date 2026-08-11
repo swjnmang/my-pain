@@ -77,6 +77,7 @@ function SessionInner() {
 
   const [logs, setLogs] = useState<Record<string, WeightRepsSet[] | TimeSet[]>>({});
   const [previousLogs, setPreviousLogs] = useState<Record<string, WeightRepsSet[] | TimeSet[]>>({});
+  const [comments, setComments] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!user || !type || !id) return;
@@ -102,6 +103,7 @@ function SessionInner() {
 
       const initialLogs: Record<string, WeightRepsSet[] | TimeSet[]> = {};
       const previous: Record<string, WeightRepsSet[] | TimeSet[]> = {};
+      const initialComments: Record<string, string> = {};
       for (const ex of sourceExercises) {
         const priorSession = pastSessions.find((s) =>
           s.exerciseLogs.some((l) => l.exerciseId === ex.id && l.sets.length > 0)
@@ -112,6 +114,13 @@ function SessionInner() {
           initialLogs[ex.id] = normalizeToThreeSets(priorLog.sets);
         } else {
           initialLogs[ex.id] = getDefaultSets(ex.id, ex.logType);
+        }
+        const commentSession = pastSessions.find((s) =>
+          s.exerciseLogs.some((l) => l.exerciseId === ex.id && l.comment)
+        );
+        const priorComment = commentSession?.exerciseLogs.find((l) => l.exerciseId === ex.id)?.comment;
+        if (priorComment) {
+          initialComments[ex.id] = priorComment;
         }
       }
       setPreviousLogs(previous);
@@ -125,10 +134,12 @@ function SessionInner() {
         setExercises(draftExercises.length > 0 ? draftExercises : sourceExercises);
         setSurvey(draft.survey);
         setLogs(draft.logs);
+        setComments(draft.comments ?? initialComments);
         setStep('log');
       } else {
         setExercises(sourceExercises);
         setLogs(initialLogs);
+        setComments(initialComments);
       }
     }
     load()
@@ -149,15 +160,21 @@ function SessionInner() {
       category,
       survey,
       logs,
+      comments,
       exerciseIds: exercises.map((ex) => ex.id),
       startedAt: existing?.startedAt ?? Date.now(),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, logs, survey, exercises, user]);
+  }, [step, logs, comments, survey, exercises, user]);
 
   function removeExercise(exerciseId: string) {
     setExercises((prev) => prev.filter((ex) => ex.id !== exerciseId));
     setLogs((prev) => {
+      const next = { ...prev };
+      delete next[exerciseId];
+      return next;
+    });
+    setComments((prev) => {
       const next = { ...prev };
       delete next[exerciseId];
       return next;
@@ -180,6 +197,7 @@ function SessionInner() {
         exerciseName: ex.name,
         logType: ex.logType,
         sets: logs[ex.id] ?? [],
+        ...(comments[ex.id] ? { comment: comments[ex.id] } : {}),
       }));
       await createSession(user.uid, {
         sourceId: id!,
@@ -300,6 +318,8 @@ function SessionInner() {
               note={ex.note}
               editHref={ownExerciseIds.has(ex.id) ? `/exercises/${ex.id}/edit` : undefined}
               onRemove={() => removeExercise(ex.id)}
+              comment={comments[ex.id]}
+              onCommentChange={(comment) => setComments((prev) => ({ ...prev, [ex.id]: comment }))}
             />
           ))}
 

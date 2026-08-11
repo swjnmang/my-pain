@@ -47,6 +47,10 @@ function EditSessionInner() {
     setLogs((prev) => prev.map((log) => (log.exerciseId === exerciseId ? { ...log, sets } : log)));
   }
 
+  function updateLogComment(exerciseId: string, comment: string) {
+    setLogs((prev) => prev.map((log) => (log.exerciseId === exerciseId ? { ...log, comment } : log)));
+  }
+
   async function handleSave() {
     if (!user) return;
     setSaving(true);
@@ -150,6 +154,8 @@ function EditSessionInner() {
                 videoUrl={exerciseMedia[log.exerciseId]?.videoUrl}
                 images={exerciseMedia[log.exerciseId]?.images}
                 note={exerciseMedia[log.exerciseId]?.note}
+                comment={log.comment}
+                onCommentChange={(comment) => updateLogComment(log.exerciseId, comment)}
               />
             ))}
           </div>

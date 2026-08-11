@@ -15,6 +15,8 @@ interface Props {
   note?: string;
   editHref?: string;
   onRemove?: () => void;
+  comment?: string;
+  onCommentChange?: (comment: string) => void;
 }
 
 type TimeUnit = 'sec' | 'min';
@@ -37,6 +39,8 @@ export default function ExerciseSetEditor({
   note,
   editHref,
   onRemove,
+  comment,
+  onCommentChange,
 }: Props) {
   const [timeUnit, setTimeUnit] = useState<TimeUnit>('sec');
 
@@ -45,8 +49,8 @@ export default function ExerciseSetEditor({
     onChange([...sets, newSet] as WeightRepsSet[] | TimeSet[]);
   }
 
-  function updateSet(index: number, field: string, value: number) {
-    const next = [...sets] as unknown as Record<string, number>[];
+  function updateSet(index: number, field: string, value: number | boolean) {
+    const next = [...sets] as unknown as Record<string, number | boolean>[];
     next[index] = { ...next[index], [field]: value };
     onChange(next as unknown as WeightRepsSet[] | TimeSet[]);
   }
@@ -131,6 +135,7 @@ export default function ExerciseSetEditor({
             </select>
           </div>
         )}
+        <span className="w-5 shrink-0" />
       </div>
 
       <div className="mt-1 space-y-2">
@@ -173,12 +178,36 @@ export default function ExerciseSetEditor({
                 />
               </>
             )}
+            <input
+              type="checkbox"
+              checked={Boolean(set.completed)}
+              onChange={(e) => updateSet(i, 'completed', e.target.checked)}
+              title="Satz erledigt"
+              className="h-5 w-5 shrink-0 accent-neutral-900"
+            />
           </div>
         ))}
       </div>
       <button onClick={addSet} className="mt-3 text-sm text-neutral-500 underline">
         + Satz hinzufügen
       </button>
+
+      {onCommentChange && (
+        <details className="mt-3 rounded-lg border border-neutral-200">
+          <summary className="cursor-pointer select-none px-3 py-2 text-sm font-medium text-neutral-600">
+            Kommentar {comment ? '📝' : ''}
+          </summary>
+          <div className="px-3 pb-3">
+            <textarea
+              value={comment ?? ''}
+              onChange={(e) => onCommentChange(e.target.value)}
+              placeholder="Notiz zu dieser Übung…"
+              rows={2}
+              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+            />
+          </div>
+        </details>
+      )}
     </div>
   );
 }

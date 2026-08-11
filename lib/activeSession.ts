@@ -13,6 +13,7 @@ export interface ActiveSessionDraft {
   category: Category;
   survey: PreSurvey;
   logs: Record<string, WeightRepsSet[] | TimeSet[]>;
+  comments: Record<string, string>;
   exerciseIds: string[];
   startedAt: number;
 }

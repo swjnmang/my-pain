@@ -56,10 +56,12 @@ export interface PreSurvey {
 export interface WeightRepsSet {
   weight: number;
   reps: number;
+  completed?: boolean;
 }
 
 export interface TimeSet {
   durationSec: number;
+  completed?: boolean;
 }
 
 export interface ExerciseLog {
@@ -67,6 +69,7 @@ export interface ExerciseLog {
   exerciseName: string;
   logType: LogType;
   sets: WeightRepsSet[] | TimeSet[];
+  comment?: string;
 }
 
 export interface Session {
