@@ -1,3 +1,5 @@
+import { Column, SetEntry } from './types';
+
 interface Guess {
   weight?: number;
   reps?: number;
@@ -47,20 +49,23 @@ export const DEFAULT_GUESS: Record<string, Guess> = {
 const FALLBACK_WEIGHT_REPS: Required<Pick<Guess, 'weight' | 'reps'>> = { weight: 20, reps: 10 };
 const FALLBACK_DURATION_SEC = 30;
 
-export function getDefaultSets(
-  exerciseId: string,
-  logType: 'weight_reps' | 'time'
-): { weight: number; reps: number }[] | { durationSec: number }[] {
-  const guess = DEFAULT_GUESS[exerciseId];
-  if (logType === 'time') {
-    const durationSec = guess?.durationSec ?? FALLBACK_DURATION_SEC;
-    return [{ durationSec }, { durationSec }, { durationSec }];
+function guessedValueForColumn(guess: Guess | undefined, unit: Column['unit']): number {
+  switch (unit) {
+    case 'kg':
+      return guess?.weight ?? FALLBACK_WEIGHT_REPS.weight;
+    case 'reps':
+      return guess?.reps ?? FALLBACK_WEIGHT_REPS.reps;
+    case 'time':
+      return guess?.durationSec ?? FALLBACK_DURATION_SEC;
+    default:
+      return 0;
   }
-  const weight = guess?.weight ?? FALLBACK_WEIGHT_REPS.weight;
-  const reps = guess?.reps ?? FALLBACK_WEIGHT_REPS.reps;
-  return [
-    { weight, reps },
-    { weight, reps },
-    { weight, reps },
-  ];
+}
+
+export function getDefaultSets(exerciseId: string, columns: Column[]): SetEntry[] {
+  const guess = DEFAULT_GUESS[exerciseId];
+  const values = Object.fromEntries(
+    columns.map((col) => [col.id, guessedValueForColumn(guess, col.unit)])
+  );
+  return [{ values: { ...values } }, { values: { ...values } }, { values: { ...values } }];
 }

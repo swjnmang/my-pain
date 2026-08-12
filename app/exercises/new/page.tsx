@@ -5,16 +5,14 @@ import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import RequireAuth from '@/components/RequireAuth';
 import AppShell from '@/components/AppShell';
+import ColumnsEditor from '@/components/ColumnsEditor';
 import { useAuth } from '@/lib/AuthContext';
 import { createUserExercise } from '@/lib/data';
+import { defaultColumns } from '@/lib/columns';
 import { resizeImageToDataUrl } from '@/lib/image';
-import { Category, CATEGORY_LABELS, LogType, PainArea, PAIN_AREA_LABELS } from '@/lib/types';
+import { Category, CATEGORY_LABELS, Column, PainArea, PAIN_AREA_LABELS } from '@/lib/types';
 
 const CATEGORIES: Category[] = ['oberkoerper', 'unterkoerper', 'ganzkoerper', 'warmup'];
-const LOG_TYPES: { value: LogType; label: string }[] = [
-  { value: 'weight_reps', label: 'Gewicht & Wdh.' },
-  { value: 'time', label: 'Zeit' },
-];
 const PAIN_AREAS: PainArea[] = ['ruecken', 'nacken_schulter', 'huefte', 'knie', 'achillessehne', 'plantarfaszie'];
 const MAX_IMAGES = 3;
 
@@ -24,7 +22,7 @@ function NewExerciseInner() {
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState<Category>('oberkoerper');
-  const [logType, setLogType] = useState<LogType>('weight_reps');
+  const [columns, setColumns] = useState<Column[]>(defaultColumns());
   const [videoUrl, setVideoUrl] = useState('');
   const [painAreas, setPainAreas] = useState<Set<PainArea>>(new Set());
   const [images, setImages] = useState<string[]>([]);
@@ -71,7 +69,7 @@ function NewExerciseInner() {
       await createUserExercise(user.uid, {
         name: name.trim(),
         category,
-        logType,
+        columns,
         ...(videoUrl.trim() ? { videoUrl: videoUrl.trim() } : {}),
         ...(images.length > 0 ? { images } : {}),
         ...(painAreas.size > 0 ? { painAreas: Array.from(painAreas) } : {}),
@@ -116,21 +114,8 @@ function NewExerciseInner() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Trainingsart</label>
-          <div className="flex gap-2">
-            {LOG_TYPES.map((t) => (
-              <button
-                key={t.value}
-                onClick={() => setLogType(t.value)}
-                className={clsx(
-                  'flex-1 rounded-full px-3 py-1.5 text-sm',
-                  logType === t.value ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'
-                )}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
+          <label className="mb-1 block text-sm font-medium">Spalten</label>
+          <ColumnsEditor columns={columns} onChange={setColumns} />
         </div>
 
         <div>

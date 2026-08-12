@@ -1,10 +1,15 @@
-import { Exercise, WorkoutTemplate } from './types';
+import { Exercise, LogType, WorkoutTemplate } from './types';
 
 function youtubeSearch(query: string): string {
   return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${query} Übung Ausführung`)}`;
 }
 
-export const SEED_EXERCISES: Exercise[] = [
+// Seed-Daten verwenden noch das alte `logType`-Feld statt `columns` — beim Lesen
+// über normalizeExercise() (lib/columns.ts) automatisch in Spalten umgewandelt,
+// genau wie bereits in Firestore vorhandene, vor diesem Feature geseedete Dokumente.
+type SeedExercise = Omit<Exercise, 'columns'> & { logType: LogType };
+
+export const SEED_EXERCISES: SeedExercise[] = [
   // Oberkörper
   { id: 'bankdruecken', name: 'Bankdrücken', category: 'oberkoerper', logType: 'weight_reps', videoUrl: youtubeSearch('Bankdrücken') },
   { id: 'latzug', name: 'Latzug', category: 'oberkoerper', logType: 'weight_reps', videoUrl: youtubeSearch('Latzug'), painAreas: ['nacken_schulter'] },

@@ -1,4 +1,4 @@
-import { Category, PreSurvey, WeightRepsSet, TimeSet } from './types';
+import { Category, PreSurvey, SetEntry } from './types';
 
 function storageKey(uid: string): string {
   return `my-pain:activeSession:${uid}`;
@@ -12,7 +12,7 @@ export interface ActiveSessionDraft {
   sourceName: string;
   category: Category;
   survey: PreSurvey;
-  logs: Record<string, WeightRepsSet[] | TimeSet[]>;
+  logs: Record<string, SetEntry[]>;
   comments: Record<string, string>;
   exerciseIds: string[];
   startedAt: number;

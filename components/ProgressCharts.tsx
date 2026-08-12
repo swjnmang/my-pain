@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 import { useAuth } from '@/lib/AuthContext';
 import { getSessions } from '@/lib/data';
-import { Session, WeightRepsSet } from '@/lib/types';
+import { Session } from '@/lib/types';
 
 export default function ProgressCharts() {
   const { user } = useAuth();
@@ -39,7 +39,7 @@ export default function ProgressCharts() {
     const map = new Map<string, string>();
     for (const s of sessions) {
       for (const log of s.exerciseLogs) {
-        if (log.logType === 'weight_reps') map.set(log.exerciseId, log.exerciseName);
+        if (log.columns.some((c) => c.unit === 'kg')) map.set(log.exerciseId, log.exerciseName);
       }
     }
     return Array.from(map.entries());
@@ -58,7 +58,10 @@ export default function ProgressCharts() {
       .map((s) => {
         const log = s.exerciseLogs.find((l) => l.exerciseId === selectedExerciseId);
         if (!log) return null;
-        const maxWeight = Math.max(0, ...(log.sets as WeightRepsSet[]).map((set) => set.weight));
+        const kgCol = log.columns.find((c) => c.unit === 'kg');
+        const maxWeight = kgCol
+          ? Math.max(0, ...log.sets.map((set) => set.values[kgCol.id] ?? 0))
+          : 0;
         return { date: s.date, 'Max. Gewicht (kg)': maxWeight };
       })
       .filter((d): d is { date: string; 'Max. Gewicht (kg)': number } => Boolean(d));

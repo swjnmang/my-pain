@@ -2,6 +2,35 @@ export type Category = 'oberkoerper' | 'unterkoerper' | 'ganzkoerper' | 'warmup'
 
 export type LogType = 'weight_reps' | 'time';
 
+export type UnitKey = 'kg' | 'reps' | 'time' | 'distance_m' | 'rpe';
+
+export const UNIT_LABELS: Record<UnitKey, string> = {
+  kg: 'Kilogramm (kg)',
+  reps: 'Wiederholungen',
+  time: 'Zeit',
+  distance_m: 'Distanz (m)',
+  rpe: 'Anstrengung (RPE)',
+};
+
+export const UNIT_SHORT: Record<UnitKey, string> = {
+  kg: 'kg',
+  reps: 'Wdh.',
+  time: 'Zeit',
+  distance_m: 'm',
+  rpe: 'RPE',
+};
+
+export interface Column {
+  id: string;
+  unit: UnitKey;
+  label?: string;
+}
+
+export interface SetEntry {
+  completed?: boolean;
+  values: Record<string, number>;
+}
+
 export type PainArea =
   | 'ruecken'
   | 'nacken_schulter'
@@ -23,7 +52,7 @@ export interface Exercise {
   id: string;
   name: string;
   category: Category;
-  logType: LogType;
+  columns: Column[];
   videoUrl?: string;
   images?: string[]; // Base64 Data-URLs, clientseitig verkleinert
   painAreas?: PainArea[];
@@ -53,22 +82,11 @@ export interface PreSurvey {
   mood: number; // 0-10
 }
 
-export interface WeightRepsSet {
-  weight: number;
-  reps: number;
-  completed?: boolean;
-}
-
-export interface TimeSet {
-  durationSec: number;
-  completed?: boolean;
-}
-
 export interface ExerciseLog {
   exerciseId: string;
   exerciseName: string;
-  logType: LogType;
-  sets: WeightRepsSet[] | TimeSet[];
+  columns: Column[];
+  sets: SetEntry[];
   comment?: string;
 }
 
@@ -81,6 +99,7 @@ export interface Session {
   preSurvey: PreSurvey;
   exerciseLogs: ExerciseLog[];
   createdAt: number;
+  durationSec?: number;
 }
 
 export interface PlannedTraining {

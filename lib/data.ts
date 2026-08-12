@@ -22,6 +22,7 @@ import {
   ExerciseLog,
   UserProfile,
 } from './types';
+import { normalizeExercise, normalizeExerciseLog } from './columns';
 
 function requireDb() {
   if (!db) throw new Error('Firebase ist nicht konfiguriert.');
@@ -30,12 +31,12 @@ function requireDb() {
 
 export async function getExercises(): Promise<Exercise[]> {
   const snap = await getDocs(collection(requireDb(), 'exercises'));
-  return snap.docs.map((d) => d.data() as Exercise);
+  return snap.docs.map((d) => normalizeExercise(d.id, d.data()));
 }
 
 export async function getUserExercises(uid: string): Promise<Exercise[]> {
   const snap = await getDocs(collection(requireDb(), 'users', uid, 'exercises'));
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Exercise);
+  return snap.docs.map((d) => normalizeExercise(d.id, d.data()));
 }
 
 export async function createUserExercise(uid: string, exercise: Omit<Exercise, 'id'>): Promise<string> {
@@ -45,7 +46,7 @@ export async function createUserExercise(uid: string, exercise: Omit<Exercise, '
 
 export async function getUserExercise(uid: string, id: string): Promise<Exercise | null> {
   const snap = await getDoc(doc(requireDb(), 'users', uid, 'exercises', id));
-  return snap.exists() ? ({ id: snap.id, ...snap.data() } as Exercise) : null;
+  return snap.exists() ? normalizeExercise(snap.id, snap.data()) : null;
 }
 
 export async function updateUserExercise(
@@ -97,10 +98,17 @@ export async function updateUserWorkout(
   await updateDoc(doc(requireDb(), 'users', uid, 'workouts', id), workout);
 }
 
+function normalizeSession(id: string, raw: Record<string, unknown>): Session {
+  const exerciseLogs = Array.isArray(raw.exerciseLogs)
+    ? (raw.exerciseLogs as Record<string, unknown>[]).map((log) => normalizeExerciseLog(log))
+    : [];
+  return { id, ...raw, exerciseLogs } as Session;
+}
+
 export async function getSessions(uid: string): Promise<Session[]> {
   const q = query(collection(requireDb(), 'users', uid, 'sessions'), orderBy('createdAt', 'desc'));
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Session);
+  return snap.docs.map((d) => normalizeSession(d.id, d.data()));
 }
 
 export async function createSession(uid: string, session: Omit<Session, 'id'>): Promise<string> {
@@ -110,7 +118,7 @@ export async function createSession(uid: string, session: Omit<Session, 'id'>): 
 
 export async function getSession(uid: string, sessionId: string): Promise<Session | null> {
   const snap = await getDoc(doc(requireDb(), 'users', uid, 'sessions', sessionId));
-  return snap.exists() ? ({ id: snap.id, ...snap.data() } as Session) : null;
+  return snap.exists() ? normalizeSession(snap.id, snap.data()) : null;
 }
 
 export async function updateSession(

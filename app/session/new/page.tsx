@@ -16,17 +16,11 @@ import {
   getSessions,
   createSession,
   deletePlannedTraining,
+  updateUserExercise,
 } from '@/lib/data';
-import {
-  Exercise,
-  ExerciseLog,
-  PreSurvey,
-  Category,
-  CATEGORY_LABELS,
-  WeightRepsSet,
-  TimeSet,
-} from '@/lib/types';
+import { Exercise, ExerciseLog, PreSurvey, Category, CATEGORY_LABELS, Column, SetEntry } from '@/lib/types';
 import { getDefaultSets } from '@/lib/exerciseDefaults';
+import { remapSetsToColumns } from '@/lib/columns';
 import {
   getActiveSessionDraft,
   saveActiveSessionDraft,
@@ -38,13 +32,21 @@ const CATEGORIES: Category[] = ['oberkoerper', 'unterkoerper', 'ganzkoerper', 'w
 
 type Step = 'survey' | 'log';
 
-function normalizeToThreeSets(sets: WeightRepsSet[] | TimeSet[]): WeightRepsSet[] | TimeSet[] {
-  const copies = sets.map((s) => ({ ...s })) as (WeightRepsSet | TimeSet)[];
-  const result = copies.slice(0, 3);
-  while (result.length < 3) {
-    result.push({ ...result[result.length - 1] });
+function prepareInitialSets(sets: SetEntry[], fromColumns: Column[], toColumns: Column[]): SetEntry[] {
+  const remapped = remapSetsToColumns(sets, fromColumns, toColumns);
+  const result = remapped.slice(0, 3);
+  while (result.length > 0 && result.length < 3) {
+    result.push({ ...result[result.length - 1], values: { ...result[result.length - 1].values } });
   }
-  return result as WeightRepsSet[] | TimeSet[];
+  return result;
+}
+
+function formatElapsed(sec: number): string {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
 }
 
 function SessionInner() {
@@ -75,9 +77,11 @@ function SessionInner() {
     mood: 5,
   });
 
-  const [logs, setLogs] = useState<Record<string, WeightRepsSet[] | TimeSet[]>>({});
-  const [previousLogs, setPreviousLogs] = useState<Record<string, WeightRepsSet[] | TimeSet[]>>({});
+  const [logs, setLogs] = useState<Record<string, SetEntry[]>>({});
+  const [previousLogs, setPreviousLogs] = useState<Record<string, { columns: Column[]; sets: SetEntry[] }>>({});
   const [comments, setComments] = useState<Record<string, string>>({});
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [nowTick, setNowTick] = useState<number>(Date.now());
 
   useEffect(() => {
     if (!user || !type || !id) return;
@@ -101,8 +105,8 @@ function SessionInner() {
         .map((exId) => fetchedExercises.find((e) => e.id === exId))
         .filter((e): e is Exercise => Boolean(e));
 
-      const initialLogs: Record<string, WeightRepsSet[] | TimeSet[]> = {};
-      const previous: Record<string, WeightRepsSet[] | TimeSet[]> = {};
+      const initialLogs: Record<string, SetEntry[]> = {};
+      const previous: Record<string, { columns: Column[]; sets: SetEntry[] }> = {};
       const initialComments: Record<string, string> = {};
       for (const ex of sourceExercises) {
         const priorSession = pastSessions.find((s) =>
@@ -110,10 +114,10 @@ function SessionInner() {
         );
         const priorLog = priorSession?.exerciseLogs.find((l) => l.exerciseId === ex.id);
         if (priorLog && priorLog.sets.length > 0) {
-          previous[ex.id] = priorLog.sets;
-          initialLogs[ex.id] = normalizeToThreeSets(priorLog.sets);
+          previous[ex.id] = { columns: priorLog.columns, sets: priorLog.sets };
+          initialLogs[ex.id] = prepareInitialSets(priorLog.sets, priorLog.columns, ex.columns);
         } else {
-          initialLogs[ex.id] = getDefaultSets(ex.id, ex.logType);
+          initialLogs[ex.id] = getDefaultSets(ex.id, ex.columns);
         }
         const commentSession = pastSessions.find((s) =>
           s.exerciseLogs.some((l) => l.exerciseId === ex.id && l.comment)
@@ -135,6 +139,7 @@ function SessionInner() {
         setSurvey(draft.survey);
         setLogs(draft.logs);
         setComments(draft.comments ?? initialComments);
+        setStartedAt(draft.startedAt);
         setStep('log');
       } else {
         setExercises(sourceExercises);
@@ -162,10 +167,16 @@ function SessionInner() {
       logs,
       comments,
       exerciseIds: exercises.map((ex) => ex.id),
-      startedAt: existing?.startedAt ?? Date.now(),
+      startedAt: existing?.startedAt ?? startedAt ?? Date.now(),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, logs, comments, survey, exercises, user]);
+
+  useEffect(() => {
+    if (step !== 'log' || !startedAt) return;
+    const interval = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [step, startedAt]);
 
   function removeExercise(exerciseId: string) {
     setExercises((prev) => prev.filter((ex) => ex.id !== exerciseId));
@@ -183,8 +194,43 @@ function SessionInner() {
 
   function addExercise(ex: Exercise) {
     setExercises((prev) => (prev.some((e) => e.id === ex.id) ? prev : [...prev, ex]));
-    setLogs((prev) => (prev[ex.id] ? prev : { ...prev, [ex.id]: getDefaultSets(ex.id, ex.logType) }));
+    setLogs((prev) => (prev[ex.id] ? prev : { ...prev, [ex.id]: getDefaultSets(ex.id, ex.columns) }));
     setShowAddPicker(false);
+  }
+
+  function moveExercise(exerciseId: string, direction: 'up' | 'down') {
+    setExercises((prev) => {
+      const idx = prev.findIndex((e) => e.id === exerciseId);
+      if (idx === -1) return prev;
+      const swapWith = direction === 'up' ? idx - 1 : idx + 1;
+      if (swapWith < 0 || swapWith >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[swapWith]] = [next[swapWith], next[idx]];
+      return next;
+    });
+  }
+
+  async function handleColumnsChange(ex: Exercise, newColumns: Column[]) {
+    setExercises((prev) => prev.map((e) => (e.id === ex.id ? { ...e, columns: newColumns } : e)));
+    setLogs((prev) => ({
+      ...prev,
+      [ex.id]: remapSetsToColumns(prev[ex.id] ?? [], ex.columns, newColumns),
+    }));
+    if (user && ownExerciseIds.has(ex.id)) {
+      try {
+        await updateUserExercise(user.uid, ex.id, {
+          name: ex.name,
+          category: ex.category,
+          columns: newColumns,
+          ...(ex.videoUrl ? { videoUrl: ex.videoUrl } : {}),
+          ...(ex.images ? { images: ex.images } : {}),
+          ...(ex.painAreas ? { painAreas: ex.painAreas } : {}),
+          ...(ex.note ? { note: ex.note } : {}),
+        });
+      } catch {
+        // Spalten-Änderung bleibt trotzdem lokal für dieses Training gültig.
+      }
+    }
   }
 
   async function finishSession() {
@@ -195,10 +241,11 @@ function SessionInner() {
       const exerciseLogs: ExerciseLog[] = exercises.map((ex) => ({
         exerciseId: ex.id,
         exerciseName: ex.name,
-        logType: ex.logType,
+        columns: ex.columns,
         sets: logs[ex.id] ?? [],
         ...(comments[ex.id] ? { comment: comments[ex.id] } : {}),
       }));
+      const durationSec = startedAt ? Math.floor((Date.now() - startedAt) / 1000) : undefined;
       await createSession(user.uid, {
         sourceId: id!,
         sourceName,
@@ -207,6 +254,7 @@ function SessionInner() {
         preSurvey: survey,
         exerciseLogs,
         createdAt: Date.now(),
+        ...(durationSec !== undefined ? { durationSec } : {}),
       });
       if (planId) {
         await deletePlannedTraining(user.uid, planId);
@@ -223,6 +271,8 @@ function SessionInner() {
   if (!type || !id) {
     return <AppShell title="Training"><p className="text-sm text-red-600">Kein Training ausgewählt.</p></AppShell>;
   }
+
+  const elapsedSec = startedAt ? Math.floor((nowTick - startedAt) / 1000) : 0;
 
   return (
     <AppShell title={sourceName || 'Training'}>
@@ -280,7 +330,10 @@ function SessionInner() {
 
           <div className="flex gap-2">
             <button
-              onClick={() => setStep('log')}
+              onClick={() => {
+                setStartedAt(Date.now());
+                setStep('log');
+              }}
               className="flex-1 rounded-lg bg-neutral-900 px-4 py-2.5 text-base font-medium text-white"
             >
               Training starten
@@ -299,27 +352,38 @@ function SessionInner() {
 
       {!loading && step === 'log' && (
         <div className="space-y-6 pb-24">
+          {startedAt && (
+            <div className="sticky top-0 z-10 -mx-4 mb-2 border-b border-neutral-200 bg-white px-4 py-2 text-center text-sm font-medium text-neutral-600">
+              ⏱ {formatElapsed(elapsedSec)}
+            </div>
+          )}
+
           {exercises.length === 0 && (
             <p className="text-sm text-neutral-500">
               Keine Übungen mehr in diesem Training. Füge unten mindestens eine hinzu, um fortzufahren.
             </p>
           )}
 
-          {exercises.map((ex) => (
+          {exercises.map((ex, i) => (
             <ExerciseSetEditor
               key={ex.id}
               name={ex.name}
-              logType={ex.logType}
+              columns={ex.columns}
               sets={logs[ex.id] ?? []}
               onChange={(sets) => setLogs((prev) => ({ ...prev, [ex.id]: sets }))}
+              onColumnsChange={(columns) => handleColumnsChange(ex, columns)}
               videoUrl={ex.videoUrl}
               images={ex.images}
-              previousSets={previousLogs[ex.id]}
+              previousSets={previousLogs[ex.id]?.sets}
+              previousColumns={previousLogs[ex.id]?.columns}
               note={ex.note}
               editHref={ownExerciseIds.has(ex.id) ? `/exercises/${ex.id}/edit` : undefined}
               onRemove={() => removeExercise(ex.id)}
               comment={comments[ex.id]}
               onCommentChange={(comment) => setComments((prev) => ({ ...prev, [ex.id]: comment }))}
+              canMoveUp={i > 0}
+              canMoveDown={i < exercises.length - 1}
+              onMove={(direction) => moveExercise(ex.id, direction)}
             />
           ))}
 
