@@ -2,22 +2,25 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import RequireAuth from '@/components/RequireAuth';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/AuthContext';
-import { getWorkoutTemplates, getUserWorkouts } from '@/lib/data';
+import { getWorkoutTemplates, getUserWorkouts, forkWorkoutTemplateToWorkout } from '@/lib/data';
 import { Category, CATEGORY_LABELS, WorkoutTemplate, Workout } from '@/lib/types';
 
 const CATEGORIES: Category[] = ['oberkoerper', 'unterkoerper', 'ganzkoerper', 'warmup'];
 
 function TrainingListInner() {
   const { user } = useAuth();
+  const router = useRouter();
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [ownWorkouts, setOwnWorkouts] = useState<Workout[]>([]);
   const [filter, setFilter] = useState<Category | 'alle'>('alle');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [forkingId, setForkingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -32,6 +35,19 @@ function TrainingListInner() {
 
   const filteredTemplates = templates.filter((t) => filter === 'alle' || t.category === filter);
   const filteredOwn = ownWorkouts.filter((w) => filter === 'alle' || w.category === filter);
+
+  async function handleEditTemplate(t: WorkoutTemplate) {
+    if (!user) return;
+    setForkingId(t.id);
+    setError(null);
+    try {
+      const newId = await forkWorkoutTemplateToWorkout(user.uid, t);
+      router.push(`/training/edit/${newId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Kopie konnte nicht erstellt werden.');
+      setForkingId(null);
+    }
+  }
 
   return (
     <AppShell title="Training">
@@ -56,19 +72,28 @@ function TrainingListInner() {
         </Link>
       </div>
 
-      <Link
-        href="/training/builder"
-        className="mb-2 block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-600"
-      >
-        + Eigenes Training erstellen
-      </Link>
+      <div className="mb-6 space-y-2">
+        <Link
+          href="/training/builder"
+          className="block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-600"
+        >
+          + Eigenes Training erstellen
+        </Link>
 
-      <Link
-        href="/exercises/new"
-        className="mb-6 block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-600"
-      >
-        + Eigene Übung erstellen
-      </Link>
+        <Link
+          href="/exercises/new"
+          className="block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-600"
+        >
+          + Eigene Übung erstellen
+        </Link>
+
+        <Link
+          href="/exercises"
+          className="block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-600"
+        >
+          Übungen bearbeiten
+        </Link>
+      </div>
 
       {loading && <p className="text-sm text-neutral-500">Lädt…</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -106,16 +131,25 @@ function TrainingListInner() {
           <h2 className="mb-2 text-sm font-semibold text-neutral-500">Vorgefertigte Trainings</h2>
           <div className="space-y-2">
             {filteredTemplates.map((t) => (
-              <Link
-                key={t.id}
-                href={`/session/new?type=template&id=${t.id}`}
-                className="block rounded-lg border border-neutral-200 px-4 py-3"
-              >
-                <p className="font-medium">{t.name}</p>
-                <p className="text-sm text-neutral-500">
-                  {CATEGORY_LABELS[t.category]} · {t.exerciseIds.length} Übungen
-                </p>
-              </Link>
+              <div key={t.id} className="flex items-center gap-2">
+                <Link
+                  href={`/session/new?type=template&id=${t.id}`}
+                  className="block flex-1 rounded-lg border border-neutral-200 px-4 py-3"
+                >
+                  <p className="font-medium">{t.name}</p>
+                  <p className="text-sm text-neutral-500">
+                    {CATEGORY_LABELS[t.category]} · {t.exerciseIds.length} Übungen
+                  </p>
+                </Link>
+                <button
+                  onClick={() => handleEditTemplate(t)}
+                  disabled={forkingId === t.id}
+                  className="rounded-lg border border-neutral-200 px-3 py-3 text-sm disabled:opacity-50"
+                  title="Eigene Kopie bearbeiten"
+                >
+                  {forkingId === t.id ? '…' : '✎'}
+                </button>
+              </div>
             ))}
             {filteredTemplates.length === 0 && (
               <p className="text-sm text-neutral-400">Keine Trainings in dieser Kategorie.</p>

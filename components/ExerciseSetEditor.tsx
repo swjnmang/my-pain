@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import ImageLightbox from './ImageLightbox';
 import { Column, SetEntry, UNIT_LABELS, UnitKey } from '@/lib/types';
 import { columnLabel, emptySetValues, formatSets, makeColumnId } from '@/lib/columns';
 
@@ -51,6 +52,7 @@ export default function ExerciseSetEditor({
   const [timeUnits, setTimeUnits] = useState<Record<string, TimeUnit>>({});
   const [addingColumn, setAddingColumn] = useState(false);
   const [newColumnLabel, setNewColumnLabel] = useState('');
+  const [zoomSrc, setZoomSrc] = useState<string | null>(null);
 
   function timeUnitFor(columnId: string): TimeUnit {
     return timeUnits[columnId] ?? 'sec';
@@ -66,7 +68,9 @@ export default function ExerciseSetEditor({
 
   function updateSetValue(index: number, columnId: string, value: number) {
     const next = [...sets];
-    next[index] = { ...next[index], values: { ...next[index].values, [columnId]: value } };
+    for (let i = index; i < next.length; i++) {
+      next[i] = { ...next[i], values: { ...next[i].values, [columnId]: value } };
+    }
     onChange(next);
   }
 
@@ -171,7 +175,13 @@ export default function ExerciseSetEditor({
           )}
           {images?.map((src, i) => (
             // eslint-disable-next-line @next/next/no-img-element
-            <img key={i} src={src} alt="" className="h-10 w-10 rounded object-cover" />
+            <img
+              key={i}
+              src={src}
+              alt=""
+              onClick={() => setZoomSrc(src)}
+              className="h-10 w-10 cursor-pointer rounded object-cover"
+            />
           ))}
         </div>
       )}
@@ -309,6 +319,7 @@ export default function ExerciseSetEditor({
           </div>
         </details>
       )}
+      <ImageLightbox src={zoomSrc} onClose={() => setZoomSrc(null)} />
     </div>
   );
 }

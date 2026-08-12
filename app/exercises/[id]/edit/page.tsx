@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import RequireAuth from '@/components/RequireAuth';
 import AppShell from '@/components/AppShell';
 import ColumnsEditor from '@/components/ColumnsEditor';
+import ImageLightbox from '@/components/ImageLightbox';
 import { useAuth } from '@/lib/AuthContext';
 import { getUserExercise, updateUserExercise } from '@/lib/data';
 import { defaultColumns } from '@/lib/columns';
@@ -29,6 +30,7 @@ function EditExerciseInner() {
   const [painAreas, setPainAreas] = useState<Set<PainArea>>(new Set());
   const [images, setImages] = useState<string[]>([]);
   const [processingImages, setProcessingImages] = useState(false);
+  const [zoomSrc, setZoomSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -179,7 +181,12 @@ function EditExerciseInner() {
                 {images.map((src, i) => (
                   <div key={i} className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={src} alt="" className="h-20 w-20 rounded-lg object-cover" />
+                    <img
+                      src={src}
+                      alt=""
+                      onClick={() => setZoomSrc(src)}
+                      className="h-20 w-20 cursor-pointer rounded-lg object-cover"
+                    />
                     <button
                       onClick={() => removeImage(i)}
                       className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-900 text-xs text-white"
@@ -191,14 +198,30 @@ function EditExerciseInner() {
               </div>
             )}
             {images.length < MAX_IMAGES && (
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageSelect}
-                disabled={processingImages}
-                className="text-sm"
-              />
+              <div className="flex gap-2">
+                <label className="cursor-pointer rounded-lg border border-neutral-300 px-3 py-2 text-sm">
+                  Aus Galerie
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageSelect}
+                    disabled={processingImages}
+                    className="hidden"
+                  />
+                </label>
+                <label className="cursor-pointer rounded-lg border border-neutral-300 px-3 py-2 text-sm">
+                  Foto aufnehmen
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleImageSelect}
+                    disabled={processingImages}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             )}
             {processingImages && <p className="mt-1 text-xs text-neutral-400">Bilder werden verkleinert…</p>}
           </div>
@@ -214,6 +237,7 @@ function EditExerciseInner() {
           </button>
         </div>
       )}
+      <ImageLightbox src={zoomSrc} onClose={() => setZoomSrc(null)} />
     </AppShell>
   );
 }

@@ -162,6 +162,19 @@ export async function updatePlannedTrainingSource(
   await updateDoc(doc(requireDb(), 'users', uid, 'plannedTrainings', id), source);
 }
 
+export async function forkExerciseToUserExercise(uid: string, exercise: Exercise): Promise<string> {
+  const ref = await addDoc(collection(requireDb(), 'users', uid, 'exercises'), {
+    name: exercise.name,
+    category: exercise.category,
+    columns: exercise.columns,
+    ...(exercise.videoUrl ? { videoUrl: exercise.videoUrl } : {}),
+    ...(exercise.images ? { images: exercise.images } : {}),
+    ...(exercise.painAreas ? { painAreas: exercise.painAreas } : {}),
+    ...(exercise.note ? { note: exercise.note } : {}),
+  });
+  return ref.id;
+}
+
 export async function forkWorkoutTemplateToWorkout(uid: string, template: WorkoutTemplate): Promise<string> {
   const ref = await addDoc(collection(requireDb(), 'users', uid, 'workouts'), {
     name: template.name,
