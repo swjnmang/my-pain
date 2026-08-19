@@ -188,7 +188,11 @@ export const SEED_EXERCISES: SeedExercise[] = [
   { id: 'tibialis-posterior-training', name: 'Tibialis Posterior Training', category: 'unterkoerper', logType: 'weight_reps', videoUrl: youtubeSearch('Tibialis posterior strengthening inversion'), painAreas: ['achillessehne', 'plantarfaszie'] },
 ];
 
-export const SEED_WORKOUT_TEMPLATES: WorkoutTemplate[] = [
+// Seed-Daten verwenden noch flache `exerciseIds` statt `blocks` — beim Lesen über
+// normalizeBlocks() (lib/blocks.ts) automatisch in einen einzelnen "Block 1" gepackt.
+type SeedWorkoutTemplate = Omit<WorkoutTemplate, 'blocks'> & { exerciseIds: string[] };
+
+export const SEED_WORKOUT_TEMPLATES: SeedWorkoutTemplate[] = [
   {
     id: 'oberkoerper-basic',
     name: 'Oberkörper Basic',

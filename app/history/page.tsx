@@ -6,6 +6,7 @@ import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/AuthContext';
 import { getSessions } from '@/lib/data';
 import { formatSets } from '@/lib/columns';
+import { groupLogsByBlock } from '@/lib/blocks';
 import { Session, CATEGORY_LABELS } from '@/lib/types';
 
 function formatDuration(sec: number): string {
@@ -61,14 +62,29 @@ function HistoryInner() {
                     Schmerzregion: {s.preSurvey.painRegion || '–'} · Schlaf: {s.preSurvey.sleepHours}h ·
                     Stimmung: {s.preSurvey.mood}/10
                   </p>
-                  <ul className="space-y-1">
-                    {s.exerciseLogs.map((log) => (
-                      <li key={log.exerciseId}>
-                        <span className="font-medium">{log.exerciseName}:</span>{' '}
-                        {formatSets(log.columns, log.sets)}
-                      </li>
-                    ))}
-                  </ul>
+                  {(() => {
+                    const groups = groupLogsByBlock(s.exerciseLogs);
+                    const showHeaders = groups.length > 1;
+                    return (
+                      <div className="space-y-2">
+                        {groups.map((group, gi) => (
+                          <div key={group.blockId ?? `group-${gi}`}>
+                            {showHeaders && group.blockName && (
+                              <p className="mb-1 text-xs font-semibold text-neutral-500">{group.blockName}</p>
+                            )}
+                            <ul className="space-y-1">
+                              {group.logs.map((log) => (
+                                <li key={log.exerciseId}>
+                                  <span className="font-medium">{log.exerciseName}:</span>{' '}
+                                  {formatSets(log.columns, log.sets)}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>

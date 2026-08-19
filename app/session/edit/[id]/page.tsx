@@ -15,6 +15,7 @@ import {
   updateUserExercise,
 } from '@/lib/data';
 import { exerciseWritePayload, remapSetsToColumns } from '@/lib/columns';
+import { groupLogsByBlock } from '@/lib/blocks';
 import { Session, PreSurvey, ExerciseLog, SetEntry, Column, Exercise } from '@/lib/types';
 
 function formatDuration(sec: number): string {
@@ -73,8 +74,10 @@ function EditSessionInner() {
     setLogs((prev) => {
       const idx = prev.findIndex((l) => l.exerciseId === exerciseId);
       if (idx === -1) return prev;
+      const blockId = prev[idx].blockId;
       const swapWith = direction === 'up' ? idx - 1 : idx + 1;
       if (swapWith < 0 || swapWith >= prev.length) return prev;
+      if (prev[swapWith].blockId !== blockId) return prev;
       const next = [...prev];
       [next[idx], next[swapWith]] = [next[swapWith], next[idx]];
       return next;
@@ -210,26 +213,39 @@ function EditSessionInner() {
             />
           </div>
 
-          <div className="space-y-4">
-            {logs.map((log, i) => (
-              <ExerciseSetEditor
-                key={log.exerciseId}
-                name={log.exerciseName}
-                columns={log.columns}
-                sets={log.sets}
-                onChange={(sets) => updateLogSets(log.exerciseId, sets)}
-                onColumnsChange={(columns) => updateLogColumns(log, columns)}
-                onValueCommit={(columnId, value) => handleValueCommit(log.exerciseId, columnId, value)}
-                videoUrl={exerciseMedia[log.exerciseId]?.videoUrl}
-                images={exerciseMedia[log.exerciseId]?.images}
-                note={exerciseMedia[log.exerciseId]?.note}
-                comment={log.comment}
-                onCommentChange={(comment) => updateLogComment(log.exerciseId, comment)}
-                canMoveUp={i > 0}
-                canMoveDown={i < logs.length - 1}
-                onMove={(direction) => moveLog(log.exerciseId, direction)}
-              />
-            ))}
+          <div className="space-y-6">
+            {(() => {
+              const groups = groupLogsByBlock(logs);
+              const showHeaders = groups.length > 1;
+              return groups.map((group, gi) => (
+                <div key={group.blockId ?? `group-${gi}`}>
+                  {showHeaders && group.blockName && (
+                    <h2 className="mb-2 text-sm font-semibold text-neutral-500">{group.blockName}</h2>
+                  )}
+                  <div className="space-y-4">
+                    {group.logs.map((log, i) => (
+                      <ExerciseSetEditor
+                        key={log.exerciseId}
+                        name={log.exerciseName}
+                        columns={log.columns}
+                        sets={log.sets}
+                        onChange={(sets) => updateLogSets(log.exerciseId, sets)}
+                        onColumnsChange={(columns) => updateLogColumns(log, columns)}
+                        onValueCommit={(columnId, value) => handleValueCommit(log.exerciseId, columnId, value)}
+                        videoUrl={exerciseMedia[log.exerciseId]?.videoUrl}
+                        images={exerciseMedia[log.exerciseId]?.images}
+                        note={exerciseMedia[log.exerciseId]?.note}
+                        comment={log.comment}
+                        onCommentChange={(comment) => updateLogComment(log.exerciseId, comment)}
+                        canMoveUp={i > 0}
+                        canMoveDown={i < group.logs.length - 1}
+                        onMove={(direction) => moveLog(log.exerciseId, direction)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ));
+            })()}
           </div>
 
           <button

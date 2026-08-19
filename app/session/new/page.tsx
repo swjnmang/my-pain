@@ -83,6 +83,8 @@ function SessionInner() {
   const [logs, setLogs] = useState<Record<string, SetEntry[]>>({});
   const [previousLogs, setPreviousLogs] = useState<Record<string, { columns: Column[]; sets: SetEntry[] }>>({});
   const [comments, setComments] = useState<Record<string, string>>({});
+  const [blocks, setBlocks] = useState<{ id: string; name: string }[]>([]);
+  const [exerciseBlockId, setExerciseBlockId] = useState<Record<string, string>>({});
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [nowTick, setNowTick] = useState<number>(Date.now());
 
@@ -104,9 +106,18 @@ function SessionInner() {
       }
       setSourceName(source.name);
       setCategory(source.category);
-      const sourceExercises = source.exerciseIds
-        .map((exId) => fetchedExercises.find((e) => e.id === exId))
-        .filter((e): e is Exercise => Boolean(e));
+      const sourceExercises: Exercise[] = [];
+      const sourceBlockIdByExercise: Record<string, string> = {};
+      for (const block of source.blocks) {
+        for (const exId of block.exerciseIds) {
+          const ex = fetchedExercises.find((e) => e.id === exId);
+          if (ex) {
+            sourceExercises.push(ex);
+            sourceBlockIdByExercise[ex.id] = block.id;
+          }
+        }
+      }
+      const sourceBlocks = source.blocks.map((b) => ({ id: b.id, name: b.name }));
 
       const initialLogs: Record<string, SetEntry[]> = {};
       const previous: Record<string, { columns: Column[]; sets: SetEntry[] }> = {};
@@ -142,12 +153,20 @@ function SessionInner() {
         setSurvey(draft.survey);
         setLogs(draft.logs);
         setComments(draft.comments ?? initialComments);
+        setBlocks(draft.blocks?.length ? draft.blocks : sourceBlocks);
+        setExerciseBlockId(
+          draft.exerciseBlockId && Object.keys(draft.exerciseBlockId).length > 0
+            ? draft.exerciseBlockId
+            : sourceBlockIdByExercise
+        );
         setStartedAt(draft.startedAt);
         setStep('log');
       } else {
         setExercises(sourceExercises);
         setLogs(initialLogs);
         setComments(initialComments);
+        setBlocks(sourceBlocks);
+        setExerciseBlockId(sourceBlockIdByExercise);
       }
     }
     load()
@@ -170,10 +189,12 @@ function SessionInner() {
       logs,
       comments,
       exerciseIds: exercises.map((ex) => ex.id),
+      blocks,
+      exerciseBlockId,
       startedAt: existing?.startedAt ?? startedAt ?? Date.now(),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, logs, comments, survey, exercises, user]);
+  }, [step, logs, comments, survey, exercises, blocks, exerciseBlockId, user]);
 
   useEffect(() => {
     if (step !== 'log' || !startedAt) return;
@@ -193,20 +214,31 @@ function SessionInner() {
       delete next[exerciseId];
       return next;
     });
+    setExerciseBlockId((prev) => {
+      const next = { ...prev };
+      delete next[exerciseId];
+      return next;
+    });
   }
 
   function addExercise(ex: Exercise) {
     setExercises((prev) => (prev.some((e) => e.id === ex.id) ? prev : [...prev, ex]));
     setLogs((prev) => (prev[ex.id] ? prev : { ...prev, [ex.id]: getDefaultSets(ex) }));
+    setExerciseBlockId((prev) => {
+      if (prev[ex.id] || blocks.length === 0) return prev;
+      return { ...prev, [ex.id]: blocks[blocks.length - 1].id };
+    });
     setShowAddPicker(false);
   }
 
   function moveExercise(exerciseId: string, direction: 'up' | 'down') {
     setExercises((prev) => {
+      const blockId = exerciseBlockId[exerciseId];
       const idx = prev.findIndex((e) => e.id === exerciseId);
       if (idx === -1) return prev;
       const swapWith = direction === 'up' ? idx - 1 : idx + 1;
       if (swapWith < 0 || swapWith >= prev.length) return prev;
+      if (exerciseBlockId[prev[swapWith].id] !== blockId) return prev;
       const next = [...prev];
       [next[idx], next[swapWith]] = [next[swapWith], next[idx]];
       return next;
@@ -244,13 +276,17 @@ function SessionInner() {
     setSaving(true);
     setError(null);
     try {
-      const exerciseLogs: ExerciseLog[] = exercises.map((ex) => ({
-        exerciseId: ex.id,
-        exerciseName: ex.name,
-        columns: ex.columns,
-        sets: logs[ex.id] ?? [],
-        ...(comments[ex.id] ? { comment: comments[ex.id] } : {}),
-      }));
+      const exerciseLogs: ExerciseLog[] = exercises.map((ex) => {
+        const block = blocks.find((b) => b.id === exerciseBlockId[ex.id]);
+        return {
+          exerciseId: ex.id,
+          exerciseName: ex.name,
+          ...(block ? { blockId: block.id, blockName: block.name } : {}),
+          columns: ex.columns,
+          sets: logs[ex.id] ?? [],
+          ...(comments[ex.id] ? { comment: comments[ex.id] } : {}),
+        };
+      });
       const durationSec = startedAt ? Math.floor((Date.now() - startedAt) / 1000) : undefined;
       await createSession(user.uid, {
         sourceId: id!,
@@ -370,29 +406,47 @@ function SessionInner() {
             </p>
           )}
 
-          {exercises.map((ex, i) => (
-            <ExerciseSetEditor
-              key={ex.id}
-              name={ex.name}
-              columns={ex.columns}
-              sets={logs[ex.id] ?? []}
-              onChange={(sets) => setLogs((prev) => ({ ...prev, [ex.id]: sets }))}
-              onColumnsChange={(columns) => handleColumnsChange(ex, columns)}
-              onValueCommit={(columnId, value) => handleValueCommit(ex, columnId, value)}
-              videoUrl={ex.videoUrl}
-              images={ex.images}
-              previousSets={previousLogs[ex.id]?.sets}
-              previousColumns={previousLogs[ex.id]?.columns}
-              note={ex.note}
-              editHref={ownExerciseIds.has(ex.id) ? `/exercises/${ex.id}/edit` : undefined}
-              onRemove={() => removeExercise(ex.id)}
-              comment={comments[ex.id]}
-              onCommentChange={(comment) => setComments((prev) => ({ ...prev, [ex.id]: comment }))}
-              canMoveUp={i > 0}
-              canMoveDown={i < exercises.length - 1}
-              onMove={(direction) => moveExercise(ex.id, direction)}
-            />
-          ))}
+          {(() => {
+            const nonEmptyBlocks = blocks.filter((b) =>
+              exercises.some((ex) => exerciseBlockId[ex.id] === b.id)
+            );
+            const showBlockHeaders = nonEmptyBlocks.length > 1;
+            return nonEmptyBlocks.map((block) => {
+              const blockExercises = exercises.filter((ex) => exerciseBlockId[ex.id] === block.id);
+              return (
+                <div key={block.id}>
+                  {showBlockHeaders && (
+                    <h2 className="mb-2 text-sm font-semibold text-neutral-500">{block.name}</h2>
+                  )}
+                  <div className="space-y-6">
+                    {blockExercises.map((ex, i) => (
+                      <ExerciseSetEditor
+                        key={ex.id}
+                        name={ex.name}
+                        columns={ex.columns}
+                        sets={logs[ex.id] ?? []}
+                        onChange={(sets) => setLogs((prev) => ({ ...prev, [ex.id]: sets }))}
+                        onColumnsChange={(columns) => handleColumnsChange(ex, columns)}
+                        onValueCommit={(columnId, value) => handleValueCommit(ex, columnId, value)}
+                        videoUrl={ex.videoUrl}
+                        images={ex.images}
+                        previousSets={previousLogs[ex.id]?.sets}
+                        previousColumns={previousLogs[ex.id]?.columns}
+                        note={ex.note}
+                        editHref={ownExerciseIds.has(ex.id) ? `/exercises/${ex.id}/edit` : undefined}
+                        onRemove={() => removeExercise(ex.id)}
+                        comment={comments[ex.id]}
+                        onCommentChange={(comment) => setComments((prev) => ({ ...prev, [ex.id]: comment }))}
+                        canMoveUp={i > 0}
+                        canMoveDown={i < blockExercises.length - 1}
+                        onMove={(direction) => moveExercise(ex.id, direction)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            });
+          })()}
 
           {!showAddPicker ? (
             <button

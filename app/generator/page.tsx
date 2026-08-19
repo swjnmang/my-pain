@@ -8,6 +8,7 @@ import RequireAuth from '@/components/RequireAuth';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/AuthContext';
 import { getAllExercisesForUser, getWorkoutTemplates, createUserWorkout } from '@/lib/data';
+import { makeBlockId, flattenBlockExerciseIds } from '@/lib/blocks';
 import { Exercise, WorkoutTemplate, PainArea, PAIN_AREA_LABELS, Category, CATEGORY_LABELS } from '@/lib/types';
 
 const PAIN_AREAS: PainArea[] = ['ruecken', 'nacken_schulter', 'huefte', 'knie', 'achillessehne', 'plantarfaszie'];
@@ -125,7 +126,7 @@ function GeneratorInner() {
       const workoutId = await createUserWorkout(user.uid, {
         name,
         category,
-        exerciseIds: Array.from(selectedIds),
+        blocks: [{ id: makeBlockId(), name: 'Block 1', exerciseIds: Array.from(selectedIds) }],
         createdAt: Date.now(),
       });
       router.replace(`/session/new?type=workout&id=${workoutId}`);
@@ -179,7 +180,7 @@ function GeneratorInner() {
                   >
                     <p className="font-medium">{t.name}</p>
                     <p className="text-sm text-neutral-500">
-                      {CATEGORY_LABELS[t.category]} · {t.exerciseIds.length} Übungen
+                      {CATEGORY_LABELS[t.category]} · {flattenBlockExerciseIds(t.blocks).length} Übungen
                     </p>
                   </Link>
                 ))}

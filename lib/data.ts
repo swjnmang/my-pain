@@ -23,6 +23,7 @@ import {
   UserProfile,
 } from './types';
 import { normalizeExercise, normalizeExerciseLog } from './columns';
+import { normalizeBlocks } from './blocks';
 
 function requireDb() {
   if (!db) throw new Error('Firebase ist nicht konfiguriert.');
@@ -62,24 +63,32 @@ export async function getAllExercisesForUser(uid: string): Promise<Exercise[]> {
   return [...global, ...own];
 }
 
+function normalizeWorkoutTemplate(id: string, raw: Record<string, unknown>): WorkoutTemplate {
+  return { ...raw, id, blocks: normalizeBlocks(raw) } as WorkoutTemplate;
+}
+
+function normalizeWorkout(id: string, raw: Record<string, unknown>): Workout {
+  return { ...raw, id, blocks: normalizeBlocks(raw) } as Workout;
+}
+
 export async function getWorkoutTemplates(): Promise<WorkoutTemplate[]> {
   const snap = await getDocs(collection(requireDb(), 'workoutTemplates'));
-  return snap.docs.map((d) => d.data() as WorkoutTemplate);
+  return snap.docs.map((d) => normalizeWorkoutTemplate(d.id, d.data()));
 }
 
 export async function getWorkoutTemplate(id: string): Promise<WorkoutTemplate | null> {
   const snap = await getDoc(doc(requireDb(), 'workoutTemplates', id));
-  return snap.exists() ? (snap.data() as WorkoutTemplate) : null;
+  return snap.exists() ? normalizeWorkoutTemplate(snap.id, snap.data()) : null;
 }
 
 export async function getUserWorkouts(uid: string): Promise<Workout[]> {
   const snap = await getDocs(collection(requireDb(), 'users', uid, 'workouts'));
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Workout);
+  return snap.docs.map((d) => normalizeWorkout(d.id, d.data()));
 }
 
 export async function getUserWorkout(uid: string, workoutId: string): Promise<Workout | null> {
   const snap = await getDoc(doc(requireDb(), 'users', uid, 'workouts', workoutId));
-  return snap.exists() ? ({ id: snap.id, ...snap.data() } as Workout) : null;
+  return snap.exists() ? normalizeWorkout(snap.id, snap.data()) : null;
 }
 
 export async function createUserWorkout(
@@ -179,7 +188,7 @@ export async function forkWorkoutTemplateToWorkout(uid: string, template: Workou
   const ref = await addDoc(collection(requireDb(), 'users', uid, 'workouts'), {
     name: template.name,
     category: template.category,
-    exerciseIds: template.exerciseIds,
+    blocks: template.blocks,
     createdAt: Date.now(),
   });
   return ref.id;

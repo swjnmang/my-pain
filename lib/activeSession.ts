@@ -15,6 +15,8 @@ export interface ActiveSessionDraft {
   logs: Record<string, SetEntry[]>;
   comments: Record<string, string>;
   exerciseIds: string[];
+  blocks: { id: string; name: string }[];
+  exerciseBlockId: Record<string, string>;
   startedAt: number;
 }
 

@@ -8,6 +8,7 @@ import RequireAuth from '@/components/RequireAuth';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/AuthContext';
 import { getWorkoutTemplates, getUserWorkouts, forkWorkoutTemplateToWorkout } from '@/lib/data';
+import { flattenBlockExerciseIds } from '@/lib/blocks';
 import { Category, CATEGORY_LABELS, WorkoutTemplate, Workout } from '@/lib/types';
 
 const CATEGORIES: Category[] = ['oberkoerper', 'unterkoerper', 'ganzkoerper', 'warmup'];
@@ -110,7 +111,7 @@ function TrainingListInner() {
                 >
                   <p className="font-medium">{w.name}</p>
                   <p className="text-sm text-neutral-500">
-                    {CATEGORY_LABELS[w.category]} · {w.exerciseIds.length} Übungen
+                    {CATEGORY_LABELS[w.category]} · {flattenBlockExerciseIds(w.blocks).length} Übungen
                   </p>
                 </Link>
                 <Link
@@ -138,7 +139,7 @@ function TrainingListInner() {
                 >
                   <p className="font-medium">{t.name}</p>
                   <p className="text-sm text-neutral-500">
-                    {CATEGORY_LABELS[t.category]} · {t.exerciseIds.length} Übungen
+                    {CATEGORY_LABELS[t.category]} · {flattenBlockExerciseIds(t.blocks).length} Übungen
                   </p>
                 </Link>
                 <button

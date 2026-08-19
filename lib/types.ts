@@ -60,11 +60,17 @@ export interface Exercise {
   note?: string; // kurzer Hinweis zur Ausführung, z.B. HSR-Technik
 }
 
+export interface Block {
+  id: string;
+  name: string;
+  exerciseIds: string[];
+}
+
 export interface WorkoutTemplate {
   id: string;
   name: string;
   category: Category;
-  exerciseIds: string[];
+  blocks: Block[];
   painAreas?: PainArea[];
 }
 
@@ -72,7 +78,7 @@ export interface Workout {
   id: string;
   name: string;
   category: Category;
-  exerciseIds: string[];
+  blocks: Block[];
   createdAt: number;
 }
 
@@ -86,6 +92,8 @@ export interface PreSurvey {
 export interface ExerciseLog {
   exerciseId: string;
   exerciseName: string;
+  blockId?: string;
+  blockName?: string;
   columns: Column[];
   sets: SetEntry[];
   comment?: string;
