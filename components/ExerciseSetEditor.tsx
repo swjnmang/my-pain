@@ -12,6 +12,7 @@ interface Props {
   sets: SetEntry[];
   onChange: (sets: SetEntry[]) => void;
   onColumnsChange?: (columns: Column[]) => void;
+  onValueCommit?: (columnId: string, value: number) => void;
   videoUrl?: string;
   images?: string[];
   previousSets?: SetEntry[];
@@ -36,6 +37,7 @@ export default function ExerciseSetEditor({
   sets,
   onChange,
   onColumnsChange,
+  onValueCommit,
   videoUrl,
   images,
   previousSets,
@@ -246,6 +248,7 @@ export default function ExerciseSetEditor({
                     ? updateDuration(i, col.id, Number(e.target.value))
                     : updateSetValue(i, col.id, Number(e.target.value))
                 }
+                onBlur={() => onValueCommit?.(col.id, sets[i]?.values[col.id] ?? 0)}
                 className="min-w-0 flex-1 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm sm:px-3 sm:py-2 sm:text-base"
               />
             ))}

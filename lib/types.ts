@@ -53,6 +53,7 @@ export interface Exercise {
   name: string;
   category: Category;
   columns: Column[];
+  defaultValues?: Record<string, number>; // columnId -> zuletzt verwendeter Wert, Startpunkt fürs nächste Loggen
   videoUrl?: string;
   images?: string[]; // Base64 Data-URLs, clientseitig verkleinert
   painAreas?: PainArea[];

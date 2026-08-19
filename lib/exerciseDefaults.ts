@@ -1,4 +1,4 @@
-import { Column, SetEntry } from './types';
+import { Column, Exercise, SetEntry } from './types';
 
 interface Guess {
   weight?: number;
@@ -62,10 +62,13 @@ function guessedValueForColumn(guess: Guess | undefined, unit: Column['unit']): 
   }
 }
 
-export function getDefaultSets(exerciseId: string, columns: Column[]): SetEntry[] {
-  const guess = DEFAULT_GUESS[exerciseId];
+export function getDefaultSets(exercise: Pick<Exercise, 'id' | 'columns' | 'defaultValues'>): SetEntry[] {
+  const guess = DEFAULT_GUESS[exercise.id];
   const values = Object.fromEntries(
-    columns.map((col) => [col.id, guessedValueForColumn(guess, col.unit)])
+    exercise.columns.map((col) => [
+      col.id,
+      exercise.defaultValues?.[col.id] ?? guessedValueForColumn(guess, col.unit),
+    ])
   );
   return [{ values: { ...values } }, { values: { ...values } }, { values: { ...values } }];
 }

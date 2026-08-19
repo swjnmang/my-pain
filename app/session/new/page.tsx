@@ -20,7 +20,7 @@ import {
 } from '@/lib/data';
 import { Exercise, ExerciseLog, PreSurvey, Category, CATEGORY_LABELS, Column, SetEntry } from '@/lib/types';
 import { getDefaultSets } from '@/lib/exerciseDefaults';
-import { remapSetsToColumns } from '@/lib/columns';
+import { exerciseWritePayload, remapSetsToColumns } from '@/lib/columns';
 import {
   getActiveSessionDraft,
   saveActiveSessionDraft,
@@ -33,10 +33,13 @@ const CATEGORIES: Category[] = ['oberkoerper', 'unterkoerper', 'ganzkoerper', 'w
 type Step = 'survey' | 'log';
 
 function prepareInitialSets(sets: SetEntry[], fromColumns: Column[], toColumns: Column[]): SetEntry[] {
-  const remapped = remapSetsToColumns(sets, fromColumns, toColumns);
+  // Neues Training: Werte vom letzten Mal übernehmen, aber "erledigt" nie vorbelegen.
+  const remapped = remapSetsToColumns(sets, fromColumns, toColumns).map((s) => ({
+    values: { ...s.values },
+  }));
   const result = remapped.slice(0, 3);
   while (result.length > 0 && result.length < 3) {
-    result.push({ ...result[result.length - 1], values: { ...result[result.length - 1].values } });
+    result.push({ values: { ...result[result.length - 1].values } });
   }
   return result;
 }
@@ -117,7 +120,7 @@ function SessionInner() {
           previous[ex.id] = { columns: priorLog.columns, sets: priorLog.sets };
           initialLogs[ex.id] = prepareInitialSets(priorLog.sets, priorLog.columns, ex.columns);
         } else {
-          initialLogs[ex.id] = getDefaultSets(ex.id, ex.columns);
+          initialLogs[ex.id] = getDefaultSets(ex);
         }
         const commentSession = pastSessions.find((s) =>
           s.exerciseLogs.some((l) => l.exerciseId === ex.id && l.comment)
@@ -194,7 +197,7 @@ function SessionInner() {
 
   function addExercise(ex: Exercise) {
     setExercises((prev) => (prev.some((e) => e.id === ex.id) ? prev : [...prev, ex]));
-    setLogs((prev) => (prev[ex.id] ? prev : { ...prev, [ex.id]: getDefaultSets(ex.id, ex.columns) }));
+    setLogs((prev) => (prev[ex.id] ? prev : { ...prev, [ex.id]: getDefaultSets(ex) }));
     setShowAddPicker(false);
   }
 
@@ -218,18 +221,21 @@ function SessionInner() {
     }));
     if (user && ownExerciseIds.has(ex.id)) {
       try {
-        await updateUserExercise(user.uid, ex.id, {
-          name: ex.name,
-          category: ex.category,
-          columns: newColumns,
-          ...(ex.videoUrl ? { videoUrl: ex.videoUrl } : {}),
-          ...(ex.images ? { images: ex.images } : {}),
-          ...(ex.painAreas ? { painAreas: ex.painAreas } : {}),
-          ...(ex.note ? { note: ex.note } : {}),
-        });
+        await updateUserExercise(user.uid, ex.id, exerciseWritePayload(ex, { columns: newColumns }));
       } catch {
         // Spalten-Änderung bleibt trotzdem lokal für dieses Training gültig.
       }
+    }
+  }
+
+  async function handleValueCommit(ex: Exercise, columnId: string, value: number) {
+    if (!user || !ownExerciseIds.has(ex.id)) return;
+    const nextDefaults = { ...(ex.defaultValues ?? {}), [columnId]: value };
+    setExercises((prev) => prev.map((e) => (e.id === ex.id ? { ...e, defaultValues: nextDefaults } : e)));
+    try {
+      await updateUserExercise(user.uid, ex.id, exerciseWritePayload(ex, { defaultValues: nextDefaults }));
+    } catch {
+      // Vorlagen-Update ist best-effort; lokale Werte im Training bleiben unverändert korrekt.
     }
   }
 
@@ -372,6 +378,7 @@ function SessionInner() {
               sets={logs[ex.id] ?? []}
               onChange={(sets) => setLogs((prev) => ({ ...prev, [ex.id]: sets }))}
               onColumnsChange={(columns) => handleColumnsChange(ex, columns)}
+              onValueCommit={(columnId, value) => handleValueCommit(ex, columnId, value)}
               videoUrl={ex.videoUrl}
               images={ex.images}
               previousSets={previousLogs[ex.id]?.sets}

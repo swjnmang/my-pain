@@ -14,7 +14,7 @@ import {
   getUserExercises,
   updateUserExercise,
 } from '@/lib/data';
-import { remapSetsToColumns } from '@/lib/columns';
+import { exerciseWritePayload, remapSetsToColumns } from '@/lib/columns';
 import { Session, PreSurvey, ExerciseLog, SetEntry, Column, Exercise } from '@/lib/types';
 
 function formatDuration(sec: number): string {
@@ -92,18 +92,26 @@ function EditSessionInner() {
     const exercise = exerciseMedia[log.exerciseId];
     if (user && exercise && ownExerciseIds.has(log.exerciseId)) {
       try {
-        await updateUserExercise(user.uid, log.exerciseId, {
-          name: exercise.name,
-          category: exercise.category,
-          columns: newColumns,
-          ...(exercise.videoUrl ? { videoUrl: exercise.videoUrl } : {}),
-          ...(exercise.images ? { images: exercise.images } : {}),
-          ...(exercise.painAreas ? { painAreas: exercise.painAreas } : {}),
-          ...(exercise.note ? { note: exercise.note } : {}),
-        });
+        await updateUserExercise(
+          user.uid,
+          log.exerciseId,
+          exerciseWritePayload(exercise, { columns: newColumns })
+        );
       } catch {
         // Spalten-Änderung bleibt trotzdem in diesem Training gespeichert.
       }
+    }
+  }
+
+  async function handleValueCommit(exerciseId: string, columnId: string, value: number) {
+    const exercise = exerciseMedia[exerciseId];
+    if (!user || !exercise || !ownExerciseIds.has(exerciseId)) return;
+    const nextDefaults = { ...(exercise.defaultValues ?? {}), [columnId]: value };
+    setExerciseMedia((prev) => ({ ...prev, [exerciseId]: { ...exercise, defaultValues: nextDefaults } }));
+    try {
+      await updateUserExercise(user.uid, exerciseId, exerciseWritePayload(exercise, { defaultValues: nextDefaults }));
+    } catch {
+      // Vorlagen-Update ist best-effort; die geloggten Werte in diesem Training bleiben korrekt.
     }
   }
 
@@ -211,6 +219,7 @@ function EditSessionInner() {
                 sets={log.sets}
                 onChange={(sets) => updateLogSets(log.exerciseId, sets)}
                 onColumnsChange={(columns) => updateLogColumns(log, columns)}
+                onValueCommit={(columnId, value) => handleValueCommit(log.exerciseId, columnId, value)}
                 videoUrl={exerciseMedia[log.exerciseId]?.videoUrl}
                 images={exerciseMedia[log.exerciseId]?.images}
                 note={exerciseMedia[log.exerciseId]?.note}

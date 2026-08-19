@@ -61,10 +61,32 @@ export function normalizeExercise(id: string, raw: Record<string, unknown>): Exe
     name: raw.name as string,
     category: raw.category as Exercise['category'],
     columns,
+    defaultValues:
+      raw.defaultValues && typeof raw.defaultValues === 'object'
+        ? (raw.defaultValues as Record<string, number>)
+        : undefined,
     videoUrl: raw.videoUrl as string | undefined,
     images: raw.images as string[] | undefined,
     painAreas: raw.painAreas as Exercise['painAreas'],
     note: raw.note as string | undefined,
+  };
+}
+
+export function exerciseWritePayload(
+  ex: Exercise,
+  patch: Partial<Pick<Exercise, 'columns' | 'defaultValues'>> = {}
+): Omit<Exercise, 'id'> {
+  const columns = patch.columns ?? ex.columns;
+  const defaultValues = patch.defaultValues ?? ex.defaultValues;
+  return {
+    name: ex.name,
+    category: ex.category,
+    columns,
+    ...(defaultValues ? { defaultValues } : {}),
+    ...(ex.videoUrl ? { videoUrl: ex.videoUrl } : {}),
+    ...(ex.images ? { images: ex.images } : {}),
+    ...(ex.painAreas ? { painAreas: ex.painAreas } : {}),
+    ...(ex.note ? { note: ex.note } : {}),
   };
 }
 
