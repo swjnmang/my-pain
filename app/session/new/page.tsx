@@ -455,7 +455,7 @@ function SessionInner() {
               disabled={saving || exercises.length === 0}
               className="w-full rounded-lg bg-neutral-900 px-4 py-2.5 text-base font-medium text-white disabled:opacity-50"
             >
-              {saving ? 'Speichert…' : 'Training abschließen'}
+              {saving ? 'Speichert…' : 'Training speichern und beenden'}
             </button>
           </div>
         </div>
