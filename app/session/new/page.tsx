@@ -428,6 +428,7 @@ function SessionInner() {
                         onChange={(sets) => setLogs((prev) => ({ ...prev, [ex.id]: sets }))}
                         onColumnsChange={(columns) => handleColumnsChange(ex, columns)}
                         onValueCommit={(columnId, value) => handleValueCommit(ex, columnId, value)}
+                        timer={ex.timer}
                         videoUrl={ex.videoUrl}
                         images={ex.images}
                         previousSets={previousLogs[ex.id]?.sets}

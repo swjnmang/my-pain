@@ -48,6 +48,11 @@ export const PAIN_AREA_LABELS: Record<PainArea, string> = {
   plantarfaszie: 'Plantarfaszie',
 };
 
+export interface ExerciseTimer {
+  workSec: number; // Dauer der Arbeitsphase (Countdown)
+  restSec: number; // Dauer der automatischen Pause danach
+}
+
 export interface Exercise {
   id: string;
   name: string;
@@ -58,6 +63,7 @@ export interface Exercise {
   images?: string[]; // Base64 Data-URLs, clientseitig verkleinert
   painAreas?: PainArea[];
   note?: string; // kurzer Hinweis zur Ausführung, z.B. HSR-Technik
+  timer?: ExerciseTimer;
 }
 
 export interface Block {

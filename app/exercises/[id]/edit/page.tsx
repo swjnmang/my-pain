@@ -6,12 +6,13 @@ import clsx from 'clsx';
 import RequireAuth from '@/components/RequireAuth';
 import AppShell from '@/components/AppShell';
 import ColumnsEditor from '@/components/ColumnsEditor';
+import ExerciseTimerEditor from '@/components/ExerciseTimerEditor';
 import ImageLightbox from '@/components/ImageLightbox';
 import { useAuth } from '@/lib/AuthContext';
 import { getUserExercise, updateUserExercise } from '@/lib/data';
 import { defaultColumns } from '@/lib/columns';
 import { resizeImageToDataUrl } from '@/lib/image';
-import { Category, CATEGORY_LABELS, Column, PainArea, PAIN_AREA_LABELS } from '@/lib/types';
+import { Category, CATEGORY_LABELS, Column, ExerciseTimer, PainArea, PAIN_AREA_LABELS } from '@/lib/types';
 
 const CATEGORIES: Category[] = ['oberkoerper', 'unterkoerper', 'ganzkoerper', 'warmup'];
 const PAIN_AREAS: PainArea[] = ['ruecken', 'nacken_schulter', 'huefte', 'knie', 'achillessehne', 'plantarfaszie'];
@@ -27,6 +28,7 @@ function EditExerciseInner() {
   const [category, setCategory] = useState<Category>('oberkoerper');
   const [columns, setColumns] = useState<Column[]>(defaultColumns());
   const [videoUrl, setVideoUrl] = useState('');
+  const [timer, setTimer] = useState<ExerciseTimer | undefined>(undefined);
   const [painAreas, setPainAreas] = useState<Set<PainArea>>(new Set());
   const [images, setImages] = useState<string[]>([]);
   const [processingImages, setProcessingImages] = useState(false);
@@ -47,6 +49,7 @@ function EditExerciseInner() {
         setCategory(ex.category);
         setColumns(ex.columns);
         setVideoUrl(ex.videoUrl ?? '');
+        setTimer(ex.timer);
         setPainAreas(new Set(ex.painAreas ?? []));
         setImages(ex.images ?? []);
       })
@@ -97,6 +100,7 @@ function EditExerciseInner() {
         ...(videoUrl.trim() ? { videoUrl: videoUrl.trim() } : {}),
         ...(images.length > 0 ? { images } : {}),
         ...(painAreas.size > 0 ? { painAreas: Array.from(painAreas) } : {}),
+        ...(timer ? { timer } : {}),
       });
       router.replace('/training/builder');
     } catch (err) {
@@ -173,6 +177,8 @@ function EditExerciseInner() {
               className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-base"
             />
           </div>
+
+          <ExerciseTimerEditor value={timer} onChange={setTimer} />
 
           <div>
             <label className="mb-1 block text-sm font-medium">Bilder (optional, max. {MAX_IMAGES})</label>

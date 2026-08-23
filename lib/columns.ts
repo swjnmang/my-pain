@@ -1,4 +1,4 @@
-import { Column, Exercise, ExerciseLog, LogType, SetEntry, UNIT_SHORT } from './types';
+import { Column, Exercise, ExerciseLog, ExerciseTimer, LogType, SetEntry, UNIT_SHORT } from './types';
 
 export function makeColumnId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -54,6 +54,14 @@ function normalizeRawSet(
   return { completed, values };
 }
 
+function normalizeTimer(raw: unknown): ExerciseTimer | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const { workSec, restSec } = raw as { workSec?: unknown; restSec?: unknown };
+  if (typeof workSec !== 'number' || typeof restSec !== 'number') return undefined;
+  if (workSec <= 0 || restSec < 0) return undefined;
+  return { workSec, restSec };
+}
+
 export function normalizeExercise(id: string, raw: Record<string, unknown>): Exercise {
   const columns = resolveColumns(raw as { columns?: unknown; logType?: LogType });
   return {
@@ -69,15 +77,17 @@ export function normalizeExercise(id: string, raw: Record<string, unknown>): Exe
     images: raw.images as string[] | undefined,
     painAreas: raw.painAreas as Exercise['painAreas'],
     note: raw.note as string | undefined,
+    timer: normalizeTimer(raw.timer),
   };
 }
 
 export function exerciseWritePayload(
   ex: Exercise,
-  patch: Partial<Pick<Exercise, 'columns' | 'defaultValues'>> = {}
+  patch: Partial<Pick<Exercise, 'columns' | 'defaultValues' | 'timer'>> = {}
 ): Omit<Exercise, 'id'> {
   const columns = patch.columns ?? ex.columns;
   const defaultValues = patch.defaultValues ?? ex.defaultValues;
+  const timer = 'timer' in patch ? patch.timer : ex.timer;
   return {
     name: ex.name,
     category: ex.category,
@@ -87,6 +97,7 @@ export function exerciseWritePayload(
     ...(ex.images ? { images: ex.images } : {}),
     ...(ex.painAreas ? { painAreas: ex.painAreas } : {}),
     ...(ex.note ? { note: ex.note } : {}),
+    ...(timer ? { timer } : {}),
   };
 }
 

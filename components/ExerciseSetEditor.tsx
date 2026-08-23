@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import ExerciseTimerRunner from './ExerciseTimerRunner';
 import ImageLightbox from './ImageLightbox';
-import { Column, SetEntry, UNIT_LABELS, UnitKey } from '@/lib/types';
+import { Column, ExerciseTimer, SetEntry, UNIT_LABELS, UnitKey } from '@/lib/types';
 import { columnLabel, emptySetValues, formatSets, makeColumnId } from '@/lib/columns';
 
 interface Props {
@@ -25,6 +26,7 @@ interface Props {
   canMoveUp?: boolean;
   canMoveDown?: boolean;
   onMove?: (direction: 'up' | 'down') => void;
+  timer?: ExerciseTimer;
 }
 
 type TimeUnit = 'sec' | 'min';
@@ -50,6 +52,7 @@ export default function ExerciseSetEditor({
   canMoveUp,
   canMoveDown,
   onMove,
+  timer,
 }: Props) {
   const [timeUnits, setTimeUnits] = useState<Record<string, TimeUnit>>({});
   const [addingColumn, setAddingColumn] = useState(false);
@@ -158,6 +161,8 @@ export default function ExerciseSetEditor({
           </div>
         )}
       </div>
+
+      {timer && <ExerciseTimerRunner timer={timer} sets={sets} onSetsChange={onChange} />}
 
       {note && (
         <p className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-800">{note}</p>
