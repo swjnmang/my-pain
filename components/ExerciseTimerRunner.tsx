@@ -30,14 +30,13 @@ function getAudioContextConstructor(): typeof AudioContext | undefined {
   return window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
 }
 
-function playBeep(ctx: AudioContext, frequency: number) {
-  const durationSec = 0.12;
+function playBeep(ctx: AudioContext, frequency: number, durationSec: number, peakVolume: number) {
   const oscillator = ctx.createOscillator();
   const gain = ctx.createGain();
   oscillator.type = 'sine';
   oscillator.frequency.value = frequency;
   gain.gain.setValueAtTime(0, ctx.currentTime);
-  gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.01);
+  gain.gain.linearRampToValueAtTime(peakVolume, ctx.currentTime + 0.01);
   gain.gain.linearRampToValueAtTime(0, ctx.currentTime + durationSec);
   oscillator.connect(gain);
   gain.connect(ctx.destination);
@@ -83,7 +82,13 @@ export default function ExerciseTimerRunner({ timer, sets, onSetsChange, onActiv
   useEffect(() => {
     if (activeIndex === null || remaining <= 0 || remaining > 3) return;
     const ctx = audioCtxRef.current;
-    if (ctx) playBeep(ctx, 880);
+    if (!ctx) return;
+    // Skistart-Signal: kurze Pieptöne bei 3 und 2, ein längerer und lauterer Ton beim Start (1).
+    if (remaining === 1) {
+      playBeep(ctx, 1046, 0.5, 0.5);
+    } else {
+      playBeep(ctx, 880, 0.12, 0.3);
+    }
   }, [remaining, activeIndex]);
 
   // Countdown: eine Sekunde runterzählen, solange aktiv und nicht pausiert.
