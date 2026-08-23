@@ -25,6 +25,26 @@ function vibrate(pattern: number | number[]) {
   }
 }
 
+function getAudioContextConstructor(): typeof AudioContext | undefined {
+  if (typeof window === 'undefined') return undefined;
+  return window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+}
+
+function playBeep(ctx: AudioContext, frequency: number) {
+  const durationSec = 0.12;
+  const oscillator = ctx.createOscillator();
+  const gain = ctx.createGain();
+  oscillator.type = 'sine';
+  oscillator.frequency.value = frequency;
+  gain.gain.setValueAtTime(0, ctx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.01);
+  gain.gain.linearRampToValueAtTime(0, ctx.currentTime + durationSec);
+  oscillator.connect(gain);
+  gain.connect(ctx.destination);
+  oscillator.start();
+  oscillator.stop(ctx.currentTime + durationSec + 0.02);
+}
+
 export default function ExerciseTimerRunner({ timer, sets, onSetsChange, onActiveChange }: Props) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [phase, setPhase] = useState<Phase>('work');
@@ -35,10 +55,36 @@ export default function ExerciseTimerRunner({ timer, sets, onSetsChange, onActiv
   setsRef.current = sets;
   const onSetsChangeRef = useRef(onSetsChange);
   onSetsChangeRef.current = onSetsChange;
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  function ensureAudioContext(): AudioContext | null {
+    const Ctx = getAudioContextConstructor();
+    if (!Ctx) return null;
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new Ctx();
+    }
+    if (audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume();
+    }
+    return audioCtxRef.current;
+  }
 
   useEffect(() => {
     onActiveChange?.(activeIndex !== null);
   }, [activeIndex, onActiveChange]);
+
+  useEffect(() => {
+    return () => {
+      audioCtxRef.current?.close();
+    };
+  }, []);
+
+  // Piepton in den letzten 3 Sekunden der Arbeits- und Pausenphase.
+  useEffect(() => {
+    if (activeIndex === null || remaining <= 0 || remaining > 3) return;
+    const ctx = audioCtxRef.current;
+    if (ctx) playBeep(ctx, 880);
+  }, [remaining, activeIndex]);
 
   // Countdown: eine Sekunde runterzählen, solange aktiv und nicht pausiert.
   useEffect(() => {
@@ -83,6 +129,7 @@ export default function ExerciseTimerRunner({ timer, sets, onSetsChange, onActiv
     if (activeIndex !== null) return;
     const startIndex = sets.findIndex((s) => !s.completed);
     if (startIndex === -1) return;
+    ensureAudioContext();
     setActiveIndex(startIndex);
     setPhase('work');
     setRemaining(timer.workSec);
@@ -127,7 +174,10 @@ export default function ExerciseTimerRunner({ timer, sets, onSetsChange, onActiv
       </p>
       <div className="mt-2 flex justify-center gap-2">
         <button
-          onClick={() => setPaused((p) => !p)}
+          onClick={() => {
+            ensureAudioContext();
+            setPaused((p) => !p);
+          }}
           className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
         >
           {paused ? 'Weiter' : 'Pause'}
