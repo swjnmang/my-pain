@@ -58,7 +58,7 @@ function normalizeTimer(raw: unknown): ExerciseTimer | undefined {
   if (!raw || typeof raw !== 'object') return undefined;
   const { workSec, restSec } = raw as { workSec?: unknown; restSec?: unknown };
   if (typeof workSec !== 'number' || typeof restSec !== 'number') return undefined;
-  if (workSec <= 0 || restSec < 0) return undefined;
+  if (workSec < 0 || restSec < 0) return undefined;
   return { workSec, restSec };
 }
 
