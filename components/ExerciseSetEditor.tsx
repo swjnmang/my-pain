@@ -19,6 +19,7 @@ interface Props {
   previousSets?: SetEntry[];
   previousColumns?: Column[];
   note?: string;
+  editMode?: boolean;
   editHref?: string;
   onRemove?: () => void;
   comment?: string;
@@ -45,6 +46,7 @@ export default function ExerciseSetEditor({
   previousSets,
   previousColumns,
   note,
+  editMode = true,
   editHref,
   onRemove,
   comment,
@@ -118,7 +120,7 @@ export default function ExerciseSetEditor({
     <div className="rounded-lg border border-neutral-200 p-4">
       <div className="flex items-start justify-between gap-2">
         <p className="font-medium">{name}</p>
-        {(onMove || editHref || onRemove) && (
+        {editMode && (onMove || editHref || onRemove) && (
           <div className="flex shrink-0 items-center gap-1">
             {onMove && (
               <>
@@ -205,7 +207,7 @@ export default function ExerciseSetEditor({
           <div key={col.id} className="flex flex-1 items-center justify-between gap-1">
             <span className="text-xs font-medium text-neutral-500">{columnLabel(col)}</span>
             <div className="flex items-center gap-1">
-              {col.unit === 'time' && (
+              {col.unit === 'time' && editMode && (
                 <select
                   value={timeUnitFor(col.id)}
                   onChange={(e) => setTimeUnitFor(col.id, e.target.value as TimeUnit)}
@@ -215,7 +217,7 @@ export default function ExerciseSetEditor({
                   <option value="min">Min.</option>
                 </select>
               )}
-              {onColumnsChange && columns.length > 1 && (
+              {editMode && onColumnsChange && columns.length > 1 && (
                 <button
                   onClick={() => removeColumn(col.id)}
                   className="text-xs text-neutral-400"
@@ -267,11 +269,13 @@ export default function ExerciseSetEditor({
           </div>
         ))}
       </div>
-      <button onClick={addSet} className="mt-3 text-sm text-neutral-500 underline">
-        + Satz hinzufügen
-      </button>
+      {editMode && (
+        <button onClick={addSet} className="mt-3 text-sm text-neutral-500 underline">
+          + Satz hinzufügen
+        </button>
+      )}
 
-      {onColumnsChange && (
+      {editMode && onColumnsChange && (
         <div className="mt-3">
           {!addingColumn ? (
             <button onClick={() => setAddingColumn(true)} className="text-sm text-neutral-500 underline">
@@ -311,7 +315,7 @@ export default function ExerciseSetEditor({
         </div>
       )}
 
-      {onCommentChange && (
+      {editMode && onCommentChange && (
         <details className="mt-3 rounded-lg border border-neutral-200">
           <summary className="cursor-pointer select-none px-3 py-2 text-sm font-medium text-neutral-600">
             Kommentar {comment ? '📝' : ''}

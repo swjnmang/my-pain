@@ -72,6 +72,7 @@ function SessionInner() {
   const [saving, setSaving] = useState(false);
   const [showAddPicker, setShowAddPicker] = useState(false);
   const [addCategory, setAddCategory] = useState<Category>('oberkoerper');
+  const [editMode, setEditMode] = useState(false);
 
   const [survey, setSurvey] = useState<PreSurvey>({
     painLevel: 0,
@@ -434,6 +435,7 @@ function SessionInner() {
                         previousSets={previousLogs[ex.id]?.sets}
                         previousColumns={previousLogs[ex.id]?.columns}
                         note={ex.note}
+                        editMode={editMode}
                         editHref={ownExerciseIds.has(ex.id) ? `/exercises/${ex.id}/edit` : undefined}
                         onRemove={() => removeExercise(ex.id)}
                         comment={comments[ex.id]}
@@ -449,7 +451,7 @@ function SessionInner() {
             });
           })()}
 
-          {!showAddPicker ? (
+          {editMode && (!showAddPicker ? (
             <button
               onClick={() => setShowAddPicker(true)}
               className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-600"
@@ -502,16 +504,24 @@ function SessionInner() {
                 )}
               </div>
             </div>
-          )}
+          ))}
 
           <div className="fixed inset-x-0 bottom-16 border-t border-neutral-200 bg-white p-4">
-            <button
-              onClick={finishSession}
-              disabled={saving || exercises.length === 0}
-              className="w-full rounded-lg bg-neutral-900 px-4 py-2.5 text-base font-medium text-white disabled:opacity-50"
-            >
-              {saving ? 'Speichert…' : 'Training speichern und beenden'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={finishSession}
+                disabled={saving || exercises.length === 0}
+                className="flex-1 rounded-lg bg-neutral-900 px-4 py-2.5 text-base font-medium text-white disabled:opacity-50"
+              >
+                {saving ? 'Speichert…' : 'Training speichern und beenden'}
+              </button>
+              <button
+                onClick={() => setEditMode((prev) => !prev)}
+                className="shrink-0 rounded-lg border border-neutral-300 px-4 py-2.5 text-base font-medium text-neutral-700"
+              >
+                {editMode ? 'Trainingsmodus' : 'Bearbeitungsmodus'}
+              </button>
+            </div>
           </div>
         </div>
       )}
