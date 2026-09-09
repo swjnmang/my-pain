@@ -176,12 +176,37 @@ export async function forkExerciseToUserExercise(uid: string, exercise: Exercise
     name: exercise.name,
     category: exercise.category,
     columns: exercise.columns,
+    ...(exercise.defaultValues ? { defaultValues: exercise.defaultValues } : {}),
     ...(exercise.videoUrl ? { videoUrl: exercise.videoUrl } : {}),
     ...(exercise.images ? { images: exercise.images } : {}),
     ...(exercise.painAreas ? { painAreas: exercise.painAreas } : {}),
     ...(exercise.note ? { note: exercise.note } : {}),
+    ...(exercise.timer ? { timer: exercise.timer } : {}),
   });
   return ref.id;
+}
+
+// Ersetzt in allen eigenen Workouts des Nutzers jede Referenz auf oldId durch newId,
+// damit eine geforkte/bearbeitete Übung auch dort erscheint, wo sie schon eingebaut war.
+export async function replaceExerciseIdInUserWorkouts(
+  uid: string,
+  oldId: string,
+  newId: string
+): Promise<void> {
+  const workouts = await getUserWorkouts(uid);
+  const affected = workouts.filter((w) => w.blocks.some((b) => b.exerciseIds.includes(oldId)));
+  await Promise.all(
+    affected.map((w) =>
+      updateUserWorkout(uid, w.id, {
+        name: w.name,
+        category: w.category,
+        blocks: w.blocks.map((b) => ({
+          ...b,
+          exerciseIds: b.exerciseIds.map((exId) => (exId === oldId ? newId : exId)),
+        })),
+      })
+    )
+  );
 }
 
 export async function forkWorkoutTemplateToWorkout(uid: string, template: WorkoutTemplate): Promise<string> {

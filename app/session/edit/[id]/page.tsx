@@ -13,6 +13,8 @@ import {
   getAllExercisesForUser,
   getUserExercises,
   updateUserExercise,
+  forkExerciseToUserExercise,
+  replaceExerciseIdInUserWorkouts,
 } from '@/lib/data';
 import { exerciseWritePayload, remapSetsToColumns } from '@/lib/columns';
 import { groupLogsByBlock } from '@/lib/blocks';
@@ -84,21 +86,44 @@ function EditSessionInner() {
     });
   }
 
+  // Wie in der aktiven Trainingsansicht: eine globale (nicht-eigene) Übung wird beim ersten
+  // Bearbeiten in die eigene Sammlung geforkt und in allen eigenen Trainingsplänen, die die
+  // alte ID referenzieren, auf die neue ID umgehängt, damit Änderungen dort ankommen.
+  async function ensureOwnExercise(exerciseId: string): Promise<{ id: string; exercise: Exercise } | null> {
+    const exercise = exerciseMedia[exerciseId];
+    if (!user || !exercise) return null;
+    if (ownExerciseIds.has(exerciseId)) return { id: exerciseId, exercise };
+    const newId = await forkExerciseToUserExercise(user.uid, exercise);
+    const forked: Exercise = { ...exercise, id: newId };
+    setOwnExerciseIds((prev) => new Set(prev).add(newId));
+    setExerciseMedia((prev) => {
+      const rest = { ...prev };
+      delete rest[exerciseId];
+      return { ...rest, [newId]: forked };
+    });
+    setLogs((prev) => prev.map((l) => (l.exerciseId === exerciseId ? { ...l, exerciseId: newId } : l)));
+    replaceExerciseIdInUserWorkouts(user.uid, exerciseId, newId).catch(() => {
+      // Verknüpfung mit anderen Trainingsplänen ist best-effort.
+    });
+    return { id: newId, exercise: forked };
+  }
+
   async function updateLogColumns(log: ExerciseLog, newColumns: Column[]) {
+    const result = await ensureOwnExercise(log.exerciseId);
+    const targetId = result?.id ?? log.exerciseId;
     setLogs((prev) =>
       prev.map((l) =>
-        l.exerciseId === log.exerciseId
+        l.exerciseId === targetId
           ? { ...l, columns: newColumns, sets: remapSetsToColumns(l.sets, log.columns, newColumns) }
           : l
       )
     );
-    const exercise = exerciseMedia[log.exerciseId];
-    if (user && exercise && ownExerciseIds.has(log.exerciseId)) {
+    if (user && result) {
       try {
         await updateUserExercise(
           user.uid,
-          log.exerciseId,
-          exerciseWritePayload(exercise, { columns: newColumns })
+          targetId,
+          exerciseWritePayload(result.exercise, { columns: newColumns })
         );
       } catch {
         // Spalten-Änderung bleibt trotzdem in diesem Training gespeichert.
@@ -107,12 +132,14 @@ function EditSessionInner() {
   }
 
   async function handleValueCommit(exerciseId: string, columnId: string, value: number) {
-    const exercise = exerciseMedia[exerciseId];
-    if (!user || !exercise || !ownExerciseIds.has(exerciseId)) return;
-    const nextDefaults = { ...(exercise.defaultValues ?? {}), [columnId]: value };
-    setExerciseMedia((prev) => ({ ...prev, [exerciseId]: { ...exercise, defaultValues: nextDefaults } }));
+    if (!user || !exerciseMedia[exerciseId]) return;
+    const result = await ensureOwnExercise(exerciseId);
+    if (!result) return;
+    const targetId = result.id;
+    const nextDefaults = { ...(result.exercise.defaultValues ?? {}), [columnId]: value };
+    setExerciseMedia((prev) => ({ ...prev, [targetId]: { ...result.exercise, defaultValues: nextDefaults } }));
     try {
-      await updateUserExercise(user.uid, exerciseId, exerciseWritePayload(exercise, { defaultValues: nextDefaults }));
+      await updateUserExercise(user.uid, targetId, exerciseWritePayload(result.exercise, { defaultValues: nextDefaults }));
     } catch {
       // Vorlagen-Update ist best-effort; die geloggten Werte in diesem Training bleiben korrekt.
     }

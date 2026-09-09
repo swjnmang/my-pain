@@ -17,6 +17,8 @@ import {
   createSession,
   deletePlannedTraining,
   updateUserExercise,
+  forkExerciseToUserExercise,
+  replaceExerciseIdInUserWorkouts,
 } from '@/lib/data';
 import { Exercise, ExerciseLog, PreSurvey, Category, CATEGORY_LABELS, Column, SetEntry } from '@/lib/types';
 import { getDefaultSets } from '@/lib/exerciseDefaults';
@@ -246,15 +248,52 @@ function SessionInner() {
     });
   }
 
+  // Sorgt dafür, dass Änderungen an einer globalen (nicht-eigenen) Übung persistiert werden
+  // können: die Übung wird einmalig in die eigene Sammlung geforkt und überall (aktuelles
+  // Training + alle eigenen Trainingspläne, die die alte ID referenzieren) auf die neue ID
+  // umgehängt, bevor der eigentliche Schreibvorgang stattfindet.
+  async function ensureOwnExercise(ex: Exercise): Promise<Exercise> {
+    if (!user || ownExerciseIds.has(ex.id)) return ex;
+    const newId = await forkExerciseToUserExercise(user.uid, ex);
+    const forked: Exercise = { ...ex, id: newId };
+    setOwnExerciseIds((prev) => new Set(prev).add(newId));
+    setExercises((prev) => prev.map((e) => (e.id === ex.id ? forked : e)));
+    setLogs((prev) => {
+      if (!(ex.id in prev)) return prev;
+      const { [ex.id]: exLogs, ...rest } = prev;
+      return { ...rest, [newId]: exLogs };
+    });
+    setComments((prev) => {
+      if (!(ex.id in prev)) return prev;
+      const { [ex.id]: comment, ...rest } = prev;
+      return { ...rest, [newId]: comment };
+    });
+    setExerciseBlockId((prev) => {
+      if (!(ex.id in prev)) return prev;
+      const { [ex.id]: blockId, ...rest } = prev;
+      return { ...rest, [newId]: blockId };
+    });
+    setPreviousLogs((prev) => {
+      if (!(ex.id in prev)) return prev;
+      const { [ex.id]: prior, ...rest } = prev;
+      return { ...rest, [newId]: prior };
+    });
+    replaceExerciseIdInUserWorkouts(user.uid, ex.id, newId).catch(() => {
+      // Verknüpfung mit anderen Trainingsplänen ist best-effort.
+    });
+    return forked;
+  }
+
   async function handleColumnsChange(ex: Exercise, newColumns: Column[]) {
-    setExercises((prev) => prev.map((e) => (e.id === ex.id ? { ...e, columns: newColumns } : e)));
+    const target = await ensureOwnExercise(ex);
+    setExercises((prev) => prev.map((e) => (e.id === target.id ? { ...e, columns: newColumns } : e)));
     setLogs((prev) => ({
       ...prev,
-      [ex.id]: remapSetsToColumns(prev[ex.id] ?? [], ex.columns, newColumns),
+      [target.id]: remapSetsToColumns(prev[target.id] ?? prev[ex.id] ?? [], ex.columns, newColumns),
     }));
-    if (user && ownExerciseIds.has(ex.id)) {
+    if (user) {
       try {
-        await updateUserExercise(user.uid, ex.id, exerciseWritePayload(ex, { columns: newColumns }));
+        await updateUserExercise(user.uid, target.id, exerciseWritePayload(target, { columns: newColumns }));
       } catch {
         // Spalten-Änderung bleibt trotzdem lokal für dieses Training gültig.
       }
@@ -262,11 +301,12 @@ function SessionInner() {
   }
 
   async function handleValueCommit(ex: Exercise, columnId: string, value: number) {
-    if (!user || !ownExerciseIds.has(ex.id)) return;
-    const nextDefaults = { ...(ex.defaultValues ?? {}), [columnId]: value };
-    setExercises((prev) => prev.map((e) => (e.id === ex.id ? { ...e, defaultValues: nextDefaults } : e)));
+    if (!user) return;
+    const target = await ensureOwnExercise(ex);
+    const nextDefaults = { ...(target.defaultValues ?? {}), [columnId]: value };
+    setExercises((prev) => prev.map((e) => (e.id === target.id ? { ...e, defaultValues: nextDefaults } : e)));
     try {
-      await updateUserExercise(user.uid, ex.id, exerciseWritePayload(ex, { defaultValues: nextDefaults }));
+      await updateUserExercise(user.uid, target.id, exerciseWritePayload(target, { defaultValues: nextDefaults }));
     } catch {
       // Vorlagen-Update ist best-effort; lokale Werte im Training bleiben unverändert korrekt.
     }
