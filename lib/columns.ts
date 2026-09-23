@@ -40,9 +40,13 @@ function normalizeRawSet(
   raw: Record<string, unknown>,
   columns: Column[]
 ): SetEntry {
+  // "completed" nur setzen, wenn es tatsächlich ein boolean ist – ein explizites
+  // `completed: undefined` würde beim erneuten Speichern (z.B. nach dem Fortsetzen
+  // eines Trainings) von Firestore als ungültiger Feldwert abgelehnt.
   const completed = typeof raw.completed === 'boolean' ? raw.completed : undefined;
   if (raw.values && typeof raw.values === 'object') {
-    return { completed, values: raw.values as Record<string, number> };
+    const values = raw.values as Record<string, number>;
+    return completed !== undefined ? { completed, values } : { values };
   }
   // Legacy shape: { weight, reps } or { durationSec }
   const values: Record<string, number> = {};
@@ -51,7 +55,7 @@ function normalizeRawSet(
     if (col.unit === 'reps' && typeof raw.reps === 'number') values[col.id] = raw.reps;
     if (col.unit === 'time' && typeof raw.durationSec === 'number') values[col.id] = raw.durationSec;
   }
-  return { completed, values };
+  return completed !== undefined ? { completed, values } : { values };
 }
 
 function normalizeTimer(raw: unknown): ExerciseTimer | undefined {

@@ -114,6 +114,24 @@ function normalizeSession(id: string, raw: Record<string, unknown>): Session {
   return { id, ...raw, exerciseLogs } as Session;
 }
 
+// Firestore lehnt `undefined`-Feldwerte (auch verschachtelt) beim Schreiben ab. Daten, die aus
+// einem bereits geladenen/normalisierten Dokument stammen (z.B. beim Fortsetzen eines
+// Trainings), können solche Werte enthalten – vor dem Zurückschreiben entfernen wir sie daher
+// rekursiv, statt uns auf jede einzelne Aufrufstelle zu verlassen.
+function stripUndefinedDeep<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((v) => stripUndefinedDeep(v)) as unknown as T;
+  }
+  if (value !== null && typeof value === 'object') {
+    const result: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v !== undefined) result[k] = stripUndefinedDeep(v);
+    }
+    return result as T;
+  }
+  return value;
+}
+
 export async function getSessions(uid: string): Promise<Session[]> {
   const q = query(collection(requireDb(), 'users', uid, 'sessions'), orderBy('createdAt', 'desc'));
   const snap = await getDocs(q);
@@ -121,7 +139,7 @@ export async function getSessions(uid: string): Promise<Session[]> {
 }
 
 export async function createSession(uid: string, session: Omit<Session, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(requireDb(), 'users', uid, 'sessions'), session);
+  const ref = await addDoc(collection(requireDb(), 'users', uid, 'sessions'), stripUndefinedDeep(session));
   return ref.id;
 }
 
@@ -135,7 +153,7 @@ export async function updateSession(
   sessionId: string,
   data: { date: string; preSurvey: PreSurvey; exerciseLogs: ExerciseLog[]; durationSec?: number }
 ): Promise<void> {
-  await updateDoc(doc(requireDb(), 'users', uid, 'sessions', sessionId), data);
+  await updateDoc(doc(requireDb(), 'users', uid, 'sessions', sessionId), stripUndefinedDeep(data));
 }
 
 export async function deleteSession(uid: string, sessionId: string): Promise<void> {
