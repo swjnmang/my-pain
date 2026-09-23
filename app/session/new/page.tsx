@@ -14,7 +14,9 @@ import {
   getWorkoutTemplate,
   getUserWorkout,
   getSessions,
+  getSession,
   createSession,
+  updateSession,
   deletePlannedTraining,
   updateUserExercise,
   forkExerciseToUserExercise,
@@ -62,6 +64,7 @@ function SessionInner() {
   const id = params.get('id');
   const dateParam = params.get('date'); // optional: YYYY-MM-DD, sonst heute
   const planId = params.get('planId'); // optional: geplante Trainingseinheit, die bei Abschluss gelöscht wird
+  const sessionIdParam = params.get('sessionId'); // optional: bestehendes Training aus dem Verlauf fortsetzen/bearbeiten
 
   const [step, setStep] = useState<Step>('survey');
   const [sourceName, setSourceName] = useState('');
@@ -90,9 +93,73 @@ function SessionInner() {
   const [exerciseBlockId, setExerciseBlockId] = useState<Record<string, string>>({});
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [nowTick, setNowTick] = useState<number>(Date.now());
+  const [resumedDate, setResumedDate] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user || !type || !id) return;
+    if (!user) return;
+    if (sessionIdParam) {
+      const loadSession = async () => {
+        const [fetchedExercises, ownExercises, existing] = await Promise.all([
+          getAllExercisesForUser(user!.uid),
+          getUserExercises(user!.uid),
+          getSession(user!.uid, sessionIdParam!),
+        ]);
+        setAllExercises(fetchedExercises);
+        setOwnExerciseIds(new Set(ownExercises.map((ex) => ex.id)));
+        if (!existing) {
+          setError('Training nicht gefunden.');
+          return;
+        }
+        setSourceName(existing.sourceName);
+        setCategory(existing.category);
+        setSurvey(existing.preSurvey);
+        setResumedDate(existing.date);
+
+        const resumedExercises: Exercise[] = [];
+        const resumedLogs: Record<string, SetEntry[]> = {};
+        const resumedComments: Record<string, string> = {};
+        const resumedBlocks: { id: string; name: string }[] = [];
+        const resumedExerciseBlockId: Record<string, string> = {};
+        const seenBlocks = new Set<string>();
+
+        for (const log of existing.exerciseLogs) {
+          const ex =
+            fetchedExercises.find((e) => e.id === log.exerciseId) ??
+            ({
+              id: log.exerciseId,
+              name: log.exerciseName,
+              category: existing.category,
+              columns: log.columns,
+            } as Exercise);
+          resumedExercises.push(ex);
+          resumedLogs[log.exerciseId] = log.sets;
+          if (log.comment) resumedComments[log.exerciseId] = log.comment;
+          const blockId = log.blockId || '__default__';
+          const blockName = log.blockName || existing.sourceName || 'Training';
+          if (!seenBlocks.has(blockId)) {
+            seenBlocks.add(blockId);
+            resumedBlocks.push({ id: blockId, name: blockName });
+          }
+          resumedExerciseBlockId[log.exerciseId] = blockId;
+        }
+        if (resumedBlocks.length === 0) {
+          resumedBlocks.push({ id: '__default__', name: existing.sourceName || 'Training' });
+        }
+
+        setExercises(resumedExercises);
+        setLogs(resumedLogs);
+        setComments(resumedComments);
+        setBlocks(resumedBlocks);
+        setExerciseBlockId(resumedExerciseBlockId);
+        setStartedAt(Date.now() - (existing.durationSec ?? 0) * 1000);
+        setStep('log');
+      };
+      loadSession()
+        .catch((err) => setError(err instanceof Error ? err.message : 'Fehler beim Laden.'))
+        .finally(() => setLoading(false));
+      return;
+    }
+    if (!type || !id) return;
     async function load() {
       const [fetchedExercises, ownExercises, pastSessions] = await Promise.all([
         getAllExercisesForUser(user!.uid),
@@ -176,10 +243,10 @@ function SessionInner() {
       .catch((err) => setError(err instanceof Error ? err.message : 'Fehler beim Laden.'))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, type, id]);
+  }, [user, type, id, sessionIdParam]);
 
   useEffect(() => {
-    if (step !== 'log' || !type || !id || !user) return;
+    if (step !== 'log' || !type || !id || !user || sessionIdParam) return;
     const existing = getActiveSessionDraft(user.uid);
     saveActiveSessionDraft(user.uid, {
       type: type as 'template' | 'workout',
@@ -329,16 +396,25 @@ function SessionInner() {
         };
       });
       const durationSec = startedAt ? Math.floor((Date.now() - startedAt) / 1000) : undefined;
-      await createSession(user.uid, {
-        sourceId: id!,
-        sourceName,
-        category,
-        date: dateParam || new Date().toISOString().slice(0, 10),
-        preSurvey: survey,
-        exerciseLogs,
-        createdAt: Date.now(),
-        ...(durationSec !== undefined ? { durationSec } : {}),
-      });
+      if (sessionIdParam) {
+        await updateSession(user.uid, sessionIdParam, {
+          date: resumedDate || new Date().toISOString().slice(0, 10),
+          preSurvey: survey,
+          exerciseLogs,
+          ...(durationSec !== undefined ? { durationSec } : {}),
+        });
+      } else {
+        await createSession(user.uid, {
+          sourceId: id!,
+          sourceName,
+          category,
+          date: dateParam || new Date().toISOString().slice(0, 10),
+          preSurvey: survey,
+          exerciseLogs,
+          createdAt: Date.now(),
+          ...(durationSec !== undefined ? { durationSec } : {}),
+        });
+      }
       if (planId) {
         await deletePlannedTraining(user.uid, planId);
       }
@@ -351,7 +427,7 @@ function SessionInner() {
     }
   }
 
-  if (!type || !id) {
+  if (!sessionIdParam && (!type || !id)) {
     return <AppShell title="Training"><p className="text-sm text-red-600">Kein Training ausgewählt.</p></AppShell>;
   }
 

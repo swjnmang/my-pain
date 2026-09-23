@@ -133,7 +133,7 @@ export async function getSession(uid: string, sessionId: string): Promise<Sessio
 export async function updateSession(
   uid: string,
   sessionId: string,
-  data: { date: string; preSurvey: PreSurvey; exerciseLogs: ExerciseLog[] }
+  data: { date: string; preSurvey: PreSurvey; exerciseLogs: ExerciseLog[]; durationSec?: number }
 ): Promise<void> {
   await updateDoc(doc(requireDb(), 'users', uid, 'sessions', sessionId), data);
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import RequireAuth from '@/components/RequireAuth';
 import AppShell from '@/components/AppShell';
 import SwipeToDelete from '@/components/SwipeToDelete';
@@ -74,6 +75,12 @@ function HistoryInner() {
 
                 {open && (
                   <div className="border-t border-neutral-200 px-4 py-3 text-sm">
+                    <Link
+                      href={`/session/new?sessionId=${s.id}`}
+                      className="mb-3 inline-block rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium"
+                    >
+                      Training fortsetzen/bearbeiten
+                    </Link>
                     <p className="mb-2 text-neutral-500">
                       Schmerzregion: {s.preSurvey.painRegion || '–'} · Schlaf: {s.preSurvey.sleepHours}h ·
                       Stimmung: {s.preSurvey.mood}/10
