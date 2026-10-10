@@ -59,7 +59,7 @@ function ExerciseListInner() {
             onClick={() => setFilter(c)}
             className={clsx(
               'whitespace-nowrap rounded-full px-3 py-1.5 text-sm',
-              filter === c ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'
+              filter === c ? 'bg-accent text-white' : 'bg-neutral-100 text-neutral-600'
             )}
           >
             {c === 'alle' ? 'Alle' : CATEGORY_LABELS[c]}
@@ -69,7 +69,7 @@ function ExerciseListInner() {
 
       <Link
         href="/exercises/new"
-        className="mb-6 block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-600"
+        className="mb-6 block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-accent"
       >
         + Eigene Übung erstellen
       </Link>
@@ -82,7 +82,7 @@ function ExerciseListInner() {
           <h2 className="mb-2 text-sm font-semibold text-neutral-500">Meine Übungen</h2>
           <div className="space-y-2">
             {filteredOwn.map((ex) => (
-              <div key={ex.id} className="flex items-center gap-2 rounded-lg border border-neutral-200 px-4 py-3">
+              <div key={ex.id} className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3.5">
                 <div className="flex-1">
                   <p className="font-medium">{ex.name}</p>
                   <p className="text-sm text-neutral-500">
@@ -91,7 +91,7 @@ function ExerciseListInner() {
                 </div>
                 <Link
                   href={`/exercises/${ex.id}/edit`}
-                  className="rounded-lg border border-neutral-200 px-3 py-3 text-sm"
+                  className="rounded-2xl bg-white px-4 py-3 text-sm text-neutral-500"
                   title="Übung bearbeiten"
                 >
                   ✎
@@ -107,7 +107,7 @@ function ExerciseListInner() {
           <h2 className="mb-2 text-sm font-semibold text-neutral-500">Vorgefertigte Übungen</h2>
           <div className="space-y-2">
             {filteredGlobal.map((ex) => (
-              <div key={ex.id} className="flex items-center gap-2 rounded-lg border border-neutral-200 px-4 py-3">
+              <div key={ex.id} className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3.5">
                 <div className="flex-1">
                   <p className="font-medium">{ex.name}</p>
                   <p className="text-sm text-neutral-500">
@@ -117,7 +117,7 @@ function ExerciseListInner() {
                 <button
                   onClick={() => handleEditGlobal(ex)}
                   disabled={forkingId === ex.id}
-                  className="rounded-lg border border-neutral-200 px-3 py-3 text-sm disabled:opacity-50"
+                  className="rounded-2xl bg-white px-4 py-3 text-sm text-neutral-500 disabled:opacity-50"
                   title="Eigene Kopie bearbeiten"
                 >
                   {forkingId === ex.id ? '…' : '✎'}

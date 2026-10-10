@@ -160,7 +160,7 @@ function GeneratorInner() {
                 onClick={() => toggleArea(area)}
                 className={clsx(
                   'rounded-full px-3 py-1.5 text-sm',
-                  selectedAreas.has(area) ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'
+                  selectedAreas.has(area) ? 'bg-accent text-white' : 'bg-neutral-100 text-neutral-600'
                 )}
               >
                 {PAIN_AREA_LABELS[area]}
@@ -176,7 +176,7 @@ function GeneratorInner() {
                   <Link
                     key={t.id}
                     href={`/session/new?type=template&id=${t.id}`}
-                    className="block rounded-lg border border-neutral-200 px-4 py-3"
+                    className="block rounded-2xl bg-white px-4 py-3.5"
                   >
                     <p className="font-medium">{t.name}</p>
                     <p className="text-sm text-neutral-500">
@@ -195,7 +195,7 @@ function GeneratorInner() {
           {selectedAreas.size > 0 && matches.length > 0 && suggested.length === 0 && (
             <button
               onClick={reshuffle}
-              className="w-full rounded-lg bg-neutral-900 px-4 py-2.5 text-base font-medium text-white"
+              className="w-full rounded-xl bg-neutral-900 px-4 py-3.5 text-base font-semibold text-white"
             >
               Training vorschlagen
             </button>
@@ -218,15 +218,15 @@ function GeneratorInner() {
                     disabled={requiredIds.has(ex.id)}
                     className={clsx(
                       'flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left',
-                      selectedIds.has(ex.id) ? 'border-neutral-900 bg-neutral-50' : 'border-neutral-200',
-                      requiredIds.has(ex.id) && 'border-amber-300 bg-amber-50'
+                      selectedIds.has(ex.id) ? 'border-accent bg-accent-soft' : 'border-neutral-200 bg-white',
+                      requiredIds.has(ex.id) && 'border-pain-soft bg-pain-soft/40'
                     )}
                   >
                     <span>
                       {ex.name}
                       <span className="ml-2 text-xs text-neutral-400">{CATEGORY_LABELS[ex.category]}</span>
                       {requiredIds.has(ex.id) && (
-                        <span className="ml-2 text-xs font-medium text-amber-700">Protokoll-Übung</span>
+                        <span className="ml-2 text-xs font-medium text-pain">Protokoll-Übung</span>
                       )}
                     </span>
                     {selectedIds.has(ex.id) && <span className="text-sm">✓</span>}
@@ -237,7 +237,7 @@ function GeneratorInner() {
               <button
                 onClick={handleSaveAndStart}
                 disabled={saving || selectedIds.size === 0}
-                className="w-full rounded-lg bg-neutral-900 px-4 py-2.5 text-base font-medium text-white disabled:opacity-50"
+                className="w-full rounded-xl bg-neutral-900 px-4 py-3.5 text-base font-semibold text-white disabled:opacity-50"
               >
                 {saving ? 'Speichert…' : 'Training speichern & starten'}
               </button>

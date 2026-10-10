@@ -63,10 +63,10 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col justify-center px-6 py-12">
       <div className="mx-auto w-full max-w-sm">
-        <h1 className="mb-1 text-2xl font-semibold">my-pain</h1>
-        <p className="mb-8 text-sm text-neutral-500">Training & Schmerz-Tracking</p>
+        <h1 className="mb-1 text-4xl font-bold tracking-tight">my-<span className="text-accent">pain</span></h1>
+        <p className="mb-8 text-[15px] text-neutral-500">Training &amp; Schmerz im Blick behalten.</p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl bg-white p-5">
           <div>
             <label className="mb-1 block text-sm font-medium">E-Mail</label>
             <input
@@ -74,7 +74,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-base"
+              className="w-full rounded-xl border border-neutral-300 bg-white px-3.5 py-3 text-base focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
               autoComplete="email"
             />
           </div>
@@ -86,7 +86,7 @@ export default function LoginPage() {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-base"
+              className="w-full rounded-xl border border-neutral-300 bg-white px-3.5 py-3 text-base focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
             />
           </div>
@@ -96,7 +96,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-lg bg-neutral-900 px-4 py-2.5 text-base font-medium text-white disabled:opacity-50"
+            className="w-full rounded-xl bg-neutral-900 px-4 py-3.5 text-base font-semibold text-white disabled:opacity-50"
           >
             {mode === 'login' ? 'Anmelden' : 'Konto erstellen'}
           </button>
@@ -112,7 +112,7 @@ export default function LoginPage() {
           type="button"
           onClick={handleGoogleLogin}
           disabled={googleSubmitting}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-neutral-300 px-4 py-2.5 text-base font-medium disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-300 px-4 py-3.5 text-base font-semibold disabled:opacity-50 bg-white"
         >
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
             <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47c-.28 1.5-1.13 2.78-2.4 3.63v3.02h3.88c2.27-2.09 3.57-5.17 3.57-8.84Z" />

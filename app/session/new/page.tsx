@@ -22,7 +22,7 @@ import {
   forkExerciseToUserExercise,
   replaceExerciseIdInUserWorkouts,
 } from '@/lib/data';
-import { Exercise, ExerciseLog, PreSurvey, Category, CATEGORY_LABELS, Column, SetEntry } from '@/lib/types';
+import { Exercise, ExerciseLog, PreSurvey, Category, CATEGORY_LABELS, Column, SetEntry, PAIN_AREA_LABELS } from '@/lib/types';
 import { getDefaultSets } from '@/lib/exerciseDefaults';
 import { exerciseWritePayload, remapSetsToColumns } from '@/lib/columns';
 import {
@@ -439,72 +439,156 @@ function SessionInner() {
       {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
 
       {!loading && step === 'survey' && (
-        <div className="space-y-6">
-          <div>
-            <label className="mb-1 block text-sm font-medium">
-              Schmerzlevel vor dem Training: {survey.painLevel}/10
-            </label>
-            <input
-              type="range"
-              min={0}
-              max={10}
-              value={survey.painLevel}
-              onChange={(e) => setSurvey({ ...survey, painLevel: Number(e.target.value) })}
-              className="w-full"
-            />
+        <div className="space-y-4 pb-24">
+          <div className="space-y-1.5">
+            <h2 className="text-[26px] font-bold tracking-tight">Kurzer Check-in</h2>
+            <p className="text-[15px] leading-snug text-neutral-500">
+              Damit du später siehst, wie Training und Schmerz zusammenhängen.
+            </p>
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium">Schmerzregion</label>
+
+          <div className="space-y-3.5 rounded-2xl bg-white p-[18px]">
+            <div className="flex items-baseline justify-between">
+              <p className="text-base font-bold">Schmerzlevel</p>
+              <p className="text-[28px] font-bold text-pain">
+                {survey.painLevel}
+                <span className="text-[15px] font-medium text-neutral-500">/10</span>
+              </p>
+            </div>
+            <div className="grid grid-cols-11 gap-1">
+              {Array.from({ length: 11 }, (_, n) => (
+                <button
+                  key={n}
+                  type="button"
+                  aria-pressed={survey.painLevel === n}
+                  onClick={() => setSurvey({ ...survey, painLevel: n })}
+                  className={clsx(
+                    'h-11 rounded-[10px] p-0 text-sm',
+                    survey.painLevel === n ? 'bg-pain font-bold text-white' : 'bg-neutral-100 font-semibold'
+                  )}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-between text-xs text-neutral-500">
+              <span>schmerzfrei</span>
+              <span>unerträglich</span>
+            </div>
+          </div>
+
+          <div className="space-y-3 rounded-2xl bg-white p-[18px]">
+            <p className="text-base font-bold">Wo?</p>
+            <div className="flex flex-wrap gap-2">
+              {Object.values(PAIN_AREA_LABELS).map((label) => {
+                const regions = survey.painRegion
+                  .split(',')
+                  .map((r) => r.trim())
+                  .filter(Boolean);
+                const active = regions.includes(label);
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => {
+                      const next = active ? regions.filter((r) => r !== label) : [...regions, label];
+                      setSurvey({ ...survey, painRegion: next.join(', ') });
+                    }}
+                    className={clsx(
+                      'h-10 rounded-full border px-3.5 text-sm',
+                      active
+                        ? 'border-accent bg-accent font-semibold text-white'
+                        : 'border-neutral-300 bg-white font-medium'
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
             <input
               type="text"
-              placeholder="z.B. rechte Hüfte"
+              placeholder="Andere Region, z.B. rechte Hüfte"
               value={survey.painRegion}
               onChange={(e) => setSurvey({ ...survey, painRegion: e.target.value })}
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-base"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium">Schlafstunden letzte Nacht</label>
-            <input
-              type="number"
-              min={0}
-              max={24}
-              step={0.5}
-              value={survey.sleepHours}
-              onChange={(e) => setSurvey({ ...survey, sleepHours: Number(e.target.value) })}
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-base"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium">Stimmung: {survey.mood}/10</label>
-            <input
-              type="range"
-              min={0}
-              max={10}
-              value={survey.mood}
-              onChange={(e) => setSurvey({ ...survey, mood: Number(e.target.value) })}
-              className="w-full"
+              className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base"
+              aria-label="Schmerzregion"
             />
           </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={() => {
-                setStartedAt(Date.now());
-                setStep('log');
-              }}
-              className="flex-1 rounded-lg bg-neutral-900 px-4 py-2.5 text-base font-medium text-white"
-            >
-              Training starten
-            </button>
-            {type === 'workout' && (
-              <Link
-                href={`/training/edit/${id}`}
-                className="flex items-center justify-center rounded-lg border border-neutral-300 px-4 py-2.5 text-base font-medium"
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2.5 rounded-2xl bg-white p-4">
+              <p className="text-sm font-semibold text-neutral-500">Schlaf</p>
+              <p className="text-[26px] font-bold">
+                {String(survey.sleepHours).replace('.', ',')}{' '}
+                <span className="text-[15px] font-medium text-neutral-500">h</span>
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  aria-label="Weniger Schlaf"
+                  onClick={() => setSurvey({ ...survey, sleepHours: Math.max(0, survey.sleepHours - 0.5) })}
+                  className="h-11 flex-1 rounded-xl bg-neutral-100 text-xl font-semibold"
+                >
+                  −
+                </button>
+                <button
+                  type="button"
+                  aria-label="Mehr Schlaf"
+                  onClick={() => setSurvey({ ...survey, sleepHours: Math.min(24, survey.sleepHours + 0.5) })}
+                  className="h-11 flex-1 rounded-xl bg-neutral-100 text-xl font-semibold"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2.5 rounded-2xl bg-white p-4">
+              <p className="text-sm font-semibold text-neutral-500">Stimmung</p>
+              <p className="text-[26px] font-bold">
+                {survey.mood} <span className="text-[15px] font-medium text-neutral-500">/10</span>
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  aria-label="Stimmung schlechter"
+                  onClick={() => setSurvey({ ...survey, mood: Math.max(0, survey.mood - 1) })}
+                  className="h-11 flex-1 rounded-xl bg-neutral-100 text-xl font-semibold"
+                >
+                  −
+                </button>
+                <button
+                  type="button"
+                  aria-label="Stimmung besser"
+                  onClick={() => setSurvey({ ...survey, mood: Math.min(10, survey.mood + 1) })}
+                  className="h-11 flex-1 rounded-xl bg-neutral-100 text-xl font-semibold"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 border-t border-neutral-200 bg-white/95 p-4 backdrop-blur">
+            <div className="mx-auto flex max-w-xl gap-2">
+              <button
+                onClick={() => {
+                  setStartedAt(Date.now());
+                  setStep('log');
+                }}
+                className="h-14 flex-1 rounded-xl bg-accent text-[17px] font-bold text-white"
               >
-                Training bearbeiten
-              </Link>
-            )}
+                Los geht&apos;s
+              </button>
+              {type === 'workout' && (
+                <Link
+                  href={`/training/edit/${id}`}
+                  className="flex h-14 items-center justify-center rounded-xl border border-neutral-300 bg-white px-4 text-[15px] font-semibold"
+                >
+                  Bearbeiten
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -512,8 +596,9 @@ function SessionInner() {
       {!loading && step === 'log' && (
         <div className="space-y-6 pb-24">
           {startedAt && (
-            <div className="sticky top-0 z-10 -mx-4 mb-2 border-b border-neutral-200 bg-white px-4 py-2 text-center text-sm font-medium text-neutral-600">
-              ⏱ {formatElapsed(elapsedSec)}
+            <div className="sticky top-0 z-10 -mx-5 mb-2 flex items-center justify-between bg-neutral-50/95 px-5 py-3 backdrop-blur">
+              <span className="text-[13px] font-medium text-neutral-500">Trainingszeit</span>
+              <span className="text-[22px] font-bold tabular-nums">{formatElapsed(elapsedSec)}</span>
             </div>
           )}
 
@@ -533,7 +618,7 @@ function SessionInner() {
               return (
                 <div key={block.id}>
                   {showBlockHeaders && (
-                    <h2 className="mb-2 text-sm font-semibold text-neutral-500">{block.name}</h2>
+                    <h2 className="mb-2 inline-flex h-8 items-center rounded-full bg-accent-soft px-3 text-[13px] font-semibold text-accent-dark">{block.name}</h2>
                   )}
                   <div className="space-y-6">
                     {blockExercises.map((ex, i) => (
@@ -570,17 +655,17 @@ function SessionInner() {
           {editMode && (!showAddPicker ? (
             <button
               onClick={() => setShowAddPicker(true)}
-              className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-600"
+              className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-accent bg-white"
             >
               + Übung hinzufügen
             </button>
           ) : (
-            <div className="rounded-lg border border-neutral-200 p-4">
+            <div className="rounded-2xl bg-white p-4">
               <div className="mb-3 flex items-center justify-between">
                 <p className="font-medium">Übung hinzufügen</p>
                 <button
                   onClick={() => setShowAddPicker(false)}
-                  className="rounded-lg border border-neutral-200 px-2 py-1 text-xs"
+                  className="rounded-lg border border-neutral-200 px-2 py-1 text-xs bg-white"
                 >
                   Schließen
                 </button>
@@ -593,7 +678,7 @@ function SessionInner() {
                     onClick={() => setAddCategory(c)}
                     className={clsx(
                       'shrink-0 rounded-full px-3 py-1.5 text-sm',
-                      addCategory === c ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'
+                      addCategory === c ? 'bg-accent text-white' : 'bg-neutral-100 text-neutral-600'
                     )}
                   >
                     {CATEGORY_LABELS[c]}
@@ -608,7 +693,7 @@ function SessionInner() {
                     <button
                       key={ex.id}
                       onClick={() => addExercise(ex)}
-                      className="flex w-full items-center justify-between rounded-lg border border-neutral-200 px-4 py-3 text-left"
+                      className="flex w-full items-center justify-between rounded-lg border border-neutral-200 px-4 py-3 text-left bg-white"
                     >
                       <span>{ex.name}</span>
                     </button>
@@ -622,18 +707,18 @@ function SessionInner() {
             </div>
           ))}
 
-          <div className="fixed inset-x-0 bottom-16 border-t border-neutral-200 bg-white p-4">
+          <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 border-t border-neutral-200 bg-white/95 p-4 backdrop-blur">
             <div className="flex items-center gap-2">
               <button
                 onClick={finishSession}
                 disabled={saving || exercises.length === 0}
-                className="flex-1 rounded-lg bg-neutral-900 px-4 py-2.5 text-base font-medium text-white disabled:opacity-50"
+                className="flex-1 rounded-xl bg-neutral-900 px-4 py-3.5 text-base font-semibold text-white disabled:opacity-50"
               >
                 {saving ? 'Speichert…' : 'Training speichern und beenden'}
               </button>
               <button
                 onClick={() => setEditMode((prev) => !prev)}
-                className="shrink-0 rounded-lg border border-neutral-300 px-4 py-2.5 text-base font-medium text-neutral-700"
+                className="shrink-0 rounded-xl border border-neutral-300 bg-white px-4 py-3.5 text-base font-semibold text-neutral-700"
               >
                 {editMode ? 'Trainingsmodus' : 'Bearbeitungsmodus'}
               </button>

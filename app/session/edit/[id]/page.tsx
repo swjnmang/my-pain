@@ -187,7 +187,7 @@ function EditSessionInner() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-base"
+              className="w-full rounded-xl border border-neutral-300 bg-white px-3.5 py-3 text-base focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             />
             {session.durationSec !== undefined && (
               <p className="mt-1 text-xs text-neutral-400">Dauer: {formatDuration(session.durationSec)}</p>
@@ -213,7 +213,7 @@ function EditSessionInner() {
               type="text"
               value={survey.painRegion}
               onChange={(e) => setSurvey({ ...survey, painRegion: e.target.value })}
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-base"
+              className="w-full rounded-xl border border-neutral-300 bg-white px-3.5 py-3 text-base focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             />
           </div>
           <div>
@@ -225,7 +225,7 @@ function EditSessionInner() {
               step={0.5}
               value={survey.sleepHours}
               onChange={(e) => setSurvey({ ...survey, sleepHours: Number(e.target.value) })}
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-base"
+              className="w-full rounded-xl border border-neutral-300 bg-white px-3.5 py-3 text-base focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             />
           </div>
           <div>
@@ -283,11 +283,11 @@ function EditSessionInner() {
             {deleting ? 'Löscht…' : 'Training löschen'}
           </button>
 
-          <div className="fixed inset-x-0 bottom-16 border-t border-neutral-200 bg-white p-4">
+          <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 border-t border-neutral-200 bg-white/95 p-4 backdrop-blur">
             <button
               onClick={handleSave}
               disabled={saving}
-              className="w-full rounded-lg bg-neutral-900 px-4 py-2.5 text-base font-medium text-white disabled:opacity-50"
+              className="w-full rounded-xl bg-neutral-900 px-4 py-3.5 text-base font-semibold text-white disabled:opacity-50"
             >
               {saving ? 'Speichert…' : 'Änderungen speichern'}
             </button>

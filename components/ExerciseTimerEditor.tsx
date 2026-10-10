@@ -68,12 +68,12 @@ export default function ExerciseTimerEditor({ value, onChange }: Props) {
           type="checkbox"
           checked={enabled}
           onChange={(e) => toggle(e.target.checked)}
-          className="h-4 w-4 accent-neutral-900"
+          className="h-4 w-4 accent-accent"
         />
         Timer für diese Übung
       </label>
       {enabled && value && (
-        <div className="mt-2 flex gap-3 rounded-lg border border-neutral-200 p-3">
+        <div className="mt-2 flex gap-3 rounded-lg border border-neutral-200 p-3 bg-white">
           <div className="flex-1">
             <label className="mb-1 block text-xs text-neutral-500">Arbeitsphase (Sek.)</label>
             <input
@@ -82,7 +82,7 @@ export default function ExerciseTimerEditor({ value, onChange }: Props) {
               value={workInput}
               onChange={(e) => handleWorkChange(e.target.value)}
               onBlur={handleWorkBlur}
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-base"
+              className="w-full rounded-xl border border-neutral-300 bg-white px-3.5 py-3 text-base focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             />
           </div>
           <div className="flex-1">
@@ -93,7 +93,7 @@ export default function ExerciseTimerEditor({ value, onChange }: Props) {
               value={restInput}
               onChange={(e) => handleRestChange(e.target.value)}
               onBlur={handleRestBlur}
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-base"
+              className="w-full rounded-xl border border-neutral-300 bg-white px-3.5 py-3 text-base focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             />
           </div>
         </div>

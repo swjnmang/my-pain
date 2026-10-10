@@ -122,7 +122,7 @@ function EditExerciseInner() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="z.B. Nordic Hamstring Curl"
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-base"
+              className="w-full rounded-xl border border-neutral-300 bg-white px-3.5 py-3 text-base focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             />
           </div>
 
@@ -135,7 +135,7 @@ function EditExerciseInner() {
                   onClick={() => setCategory(c)}
                   className={clsx(
                     'flex-1 rounded-full px-3 py-1.5 text-sm',
-                    category === c ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'
+                    category === c ? 'bg-accent text-white' : 'bg-neutral-100 text-neutral-600'
                   )}
                 >
                   {CATEGORY_LABELS[c]}
@@ -158,7 +158,7 @@ function EditExerciseInner() {
                   onClick={() => togglePainArea(area)}
                   className={clsx(
                     'rounded-full px-3 py-1.5 text-xs',
-                    painAreas.has(area) ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'
+                    painAreas.has(area) ? 'bg-accent text-white' : 'bg-neutral-100 text-neutral-600'
                   )}
                 >
                   {PAIN_AREA_LABELS[area]}
@@ -174,7 +174,7 @@ function EditExerciseInner() {
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
               placeholder="https://www.youtube.com/..."
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-base"
+              className="w-full rounded-xl border border-neutral-300 bg-white px-3.5 py-3 text-base focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             />
           </div>
 
@@ -205,7 +205,7 @@ function EditExerciseInner() {
             )}
             {images.length < MAX_IMAGES && (
               <div className="flex gap-2">
-                <label className="cursor-pointer rounded-lg border border-neutral-300 px-3 py-2 text-sm">
+                <label className="cursor-pointer rounded-lg border border-neutral-300 px-3 py-2 text-sm bg-white">
                   Aus Galerie
                   <input
                     type="file"
@@ -216,7 +216,7 @@ function EditExerciseInner() {
                     className="hidden"
                   />
                 </label>
-                <label className="cursor-pointer rounded-lg border border-neutral-300 px-3 py-2 text-sm">
+                <label className="cursor-pointer rounded-lg border border-neutral-300 px-3 py-2 text-sm bg-white">
                   Foto aufnehmen
                   <input
                     type="file"
@@ -237,7 +237,7 @@ function EditExerciseInner() {
           <button
             onClick={handleSave}
             disabled={saving || !name.trim()}
-            className="w-full rounded-lg bg-neutral-900 px-4 py-2.5 text-base font-medium text-white disabled:opacity-50"
+            className="w-full rounded-xl bg-neutral-900 px-4 py-3.5 text-base font-semibold text-white disabled:opacity-50"
           >
             {saving ? 'Speichert…' : 'Änderungen speichern'}
           </button>

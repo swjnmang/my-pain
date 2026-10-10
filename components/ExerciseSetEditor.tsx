@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import ExerciseTimerRunner from './ExerciseTimerRunner';
+import clsx from 'clsx';
 import ImageLightbox from './ImageLightbox';
 import { Column, ExerciseTimer, SetEntry, UNIT_LABELS, UnitKey } from '@/lib/types';
 import { columnLabel, emptySetValues, formatSets, makeColumnId } from '@/lib/columns';
@@ -117,9 +118,9 @@ export default function ExerciseSetEditor({
   }
 
   return (
-    <div className="rounded-lg border border-neutral-200 p-4">
+    <div className="rounded-2xl bg-white p-4">
       <div className="flex items-start justify-between gap-2">
-        <p className="font-medium">{name}</p>
+        <p className="text-lg font-bold leading-tight">{name}</p>
         {editMode && (onMove || editHref || onRemove) && (
           <div className="flex shrink-0 items-center gap-1">
             {onMove && (
@@ -127,7 +128,7 @@ export default function ExerciseSetEditor({
                 <button
                   onClick={() => onMove('up')}
                   disabled={!canMoveUp}
-                  className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-30"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-100 text-xs disabled:opacity-30"
                   title="Nach oben verschieben"
                 >
                   ▲
@@ -135,7 +136,7 @@ export default function ExerciseSetEditor({
                 <button
                   onClick={() => onMove('down')}
                   disabled={!canMoveDown}
-                  className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-30"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-100 text-xs disabled:opacity-30"
                   title="Nach unten verschieben"
                 >
                   ▼
@@ -145,7 +146,7 @@ export default function ExerciseSetEditor({
             {editHref && (
               <Link
                 href={editHref}
-                className="rounded-lg border border-neutral-200 px-2 py-1 text-xs"
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-100 text-xs"
                 title="Übung bearbeiten"
               >
                 ✎
@@ -154,7 +155,7 @@ export default function ExerciseSetEditor({
             {onRemove && (
               <button
                 onClick={onRemove}
-                className="rounded-lg border border-neutral-200 px-2 py-1 text-xs text-red-600"
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-100 text-xs text-red-600"
                 title="Übung aus Training entfernen"
               >
                 ✕
@@ -167,7 +168,7 @@ export default function ExerciseSetEditor({
       {timer && <ExerciseTimerRunner timer={timer} sets={sets} onSetsChange={onChange} />}
 
       {note && (
-        <p className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-800">{note}</p>
+        <p className="mt-2 rounded-md bg-accent-soft px-3 py-2 text-xs text-accent-dark">{note}</p>
       )}
 
       {(videoUrl || (images && images.length > 0)) && (
@@ -177,7 +178,7 @@ export default function ExerciseSetEditor({
               href={videoUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-blue-600 underline"
+              className="text-xs font-semibold text-accent underline"
             >
               ▶ Video ansehen
             </a>
@@ -211,7 +212,7 @@ export default function ExerciseSetEditor({
                 <select
                   value={timeUnitFor(col.id)}
                   onChange={(e) => setTimeUnitFor(col.id, e.target.value as TimeUnit)}
-                  className="rounded border border-neutral-300 px-1 py-0.5 text-xs"
+                  className="rounded border border-neutral-300 px-1 py-0.5 text-xs bg-white"
                 >
                   <option value="sec">Sek.</option>
                   <option value="min">Min.</option>
@@ -229,13 +230,13 @@ export default function ExerciseSetEditor({
             </div>
           </div>
         ))}
-        <span className="w-5 shrink-0" />
+        <span className="w-11 shrink-0" />
       </div>
 
       <div className="mt-1 space-y-2">
         {sets.map((set, i) => (
           <div key={i} className="flex items-center gap-2">
-            <span className="w-6 text-sm text-neutral-400">{i + 1}.</span>
+            <span className="w-6 text-sm font-bold text-neutral-500">{i + 1}</span>
             {columns.map((col) => (
               <input
                 key={col.id}
@@ -256,21 +257,34 @@ export default function ExerciseSetEditor({
                     : updateSetValue(i, col.id, Number(e.target.value))
                 }
                 onBlur={() => onValueCommit?.(col.id, sets[i]?.values[col.id] ?? 0)}
-                className="min-w-0 flex-1 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm sm:px-3 sm:py-2 sm:text-base"
+                className={clsx(
+                  'h-11 min-w-0 flex-1 rounded-xl border-2 border-transparent bg-neutral-100 px-2 text-center text-[17px] font-semibold focus:border-accent focus:bg-white focus:outline-none',
+                  set.completed && 'text-neutral-500'
+                )}
               />
             ))}
-            <input
-              type="checkbox"
-              checked={Boolean(set.completed)}
-              onChange={(e) => updateSetCompleted(i, e.target.checked)}
-              title="Satz erledigt"
-              className="h-5 w-5 shrink-0 accent-neutral-900"
-            />
+            <button
+              type="button"
+              aria-pressed={Boolean(set.completed)}
+              aria-label={`Satz ${i + 1} erledigt`}
+              onClick={() => updateSetCompleted(i, !set.completed)}
+              className={clsx(
+                'flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2',
+                set.completed ? 'border-accent bg-accent text-white' : 'border-neutral-300 bg-white text-transparent'
+              )}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 12l5 5 9-10" />
+              </svg>
+            </button>
           </div>
         ))}
       </div>
       {editMode && (
-        <button onClick={addSet} className="mt-3 text-sm text-neutral-500 underline">
+        <button
+          onClick={addSet}
+          className="mt-3 h-11 w-full rounded-xl border border-dashed border-neutral-300 text-sm font-semibold text-accent bg-white"
+        >
           + Satz hinzufügen
         </button>
       )}
@@ -282,7 +296,7 @@ export default function ExerciseSetEditor({
               + Spalte hinzufügen
             </button>
           ) : (
-            <div className="rounded-lg border border-neutral-200 p-3">
+            <div className="rounded-lg border border-neutral-200 p-3 bg-white">
               <p className="mb-2 text-xs font-medium text-neutral-500">Einheit wählen</p>
               <div className="mb-2 flex flex-wrap gap-2">
                 {UNIT_ORDER.map((unit) => (
@@ -299,7 +313,7 @@ export default function ExerciseSetEditor({
                 value={newColumnLabel}
                 onChange={(e) => setNewColumnLabel(e.target.value)}
                 placeholder="Eigene Bezeichnung (optional)"
-                className="mb-2 w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
+                className="mb-2 w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm bg-white"
               />
               <button
                 onClick={() => {
@@ -316,7 +330,7 @@ export default function ExerciseSetEditor({
       )}
 
       {editMode && onCommentChange && (
-        <details className="mt-3 rounded-lg border border-neutral-200">
+        <details className="mt-3 rounded-lg border border-neutral-200 bg-white">
           <summary className="cursor-pointer select-none px-3 py-2 text-sm font-medium text-neutral-600">
             Kommentar {comment ? '📝' : ''}
           </summary>
@@ -326,7 +340,7 @@ export default function ExerciseSetEditor({
               onChange={(e) => onCommentChange(e.target.value)}
               placeholder="Notiz zu dieser Übung…"
               rows={2}
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+              className="w-full rounded-xl border border-neutral-300 bg-white px-3.5 py-3 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
             />
           </div>
         </details>

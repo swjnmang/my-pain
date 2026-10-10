@@ -59,7 +59,7 @@ function TrainingListInner() {
             onClick={() => setFilter(c)}
             className={clsx(
               'whitespace-nowrap rounded-full px-3 py-1.5 text-sm',
-              filter === c ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'
+              filter === c ? 'bg-accent text-white' : 'bg-neutral-100 text-neutral-600'
             )}
           >
             {c === 'alle' ? 'Alle' : CATEGORY_LABELS[c]}
@@ -67,7 +67,7 @@ function TrainingListInner() {
         ))}
         <Link
           href="/generator"
-          className="whitespace-nowrap rounded-full bg-amber-100 px-3 py-1.5 text-sm font-medium text-amber-800"
+          className="whitespace-nowrap rounded-full bg-pain-soft px-3 py-1.5 text-sm font-semibold text-pain"
         >
           Nach Schmerzbereich
         </Link>
@@ -76,21 +76,21 @@ function TrainingListInner() {
       <div className="mb-6 space-y-2">
         <Link
           href="/training/builder"
-          className="block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-600"
+          className="block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-accent"
         >
           + Eigenes Training erstellen
         </Link>
 
         <Link
           href="/exercises/new"
-          className="block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-600"
+          className="block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-accent"
         >
           + Eigene Übung erstellen
         </Link>
 
         <Link
           href="/exercises"
-          className="block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-600"
+          className="block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-accent"
         >
           Übungen bearbeiten
         </Link>
@@ -107,7 +107,7 @@ function TrainingListInner() {
               <div key={w.id} className="flex items-center gap-2">
                 <Link
                   href={`/session/new?type=workout&id=${w.id}`}
-                  className="block flex-1 rounded-lg border border-neutral-200 px-4 py-3"
+                  className="block flex-1 rounded-2xl bg-white px-4 py-3.5"
                 >
                   <p className="font-medium">{w.name}</p>
                   <p className="text-sm text-neutral-500">
@@ -116,7 +116,7 @@ function TrainingListInner() {
                 </Link>
                 <Link
                   href={`/training/edit/${w.id}`}
-                  className="rounded-lg border border-neutral-200 px-3 py-3 text-sm"
+                  className="rounded-2xl bg-white px-4 py-3 text-sm text-neutral-500"
                   title="Training bearbeiten"
                 >
                   ✎
@@ -135,7 +135,7 @@ function TrainingListInner() {
               <div key={t.id} className="flex items-center gap-2">
                 <Link
                   href={`/session/new?type=template&id=${t.id}`}
-                  className="block flex-1 rounded-lg border border-neutral-200 px-4 py-3"
+                  className="block flex-1 rounded-2xl bg-white px-4 py-3.5"
                 >
                   <p className="font-medium">{t.name}</p>
                   <p className="text-sm text-neutral-500">
@@ -145,7 +145,7 @@ function TrainingListInner() {
                 <button
                   onClick={() => handleEditTemplate(t)}
                   disabled={forkingId === t.id}
-                  className="rounded-lg border border-neutral-200 px-3 py-3 text-sm disabled:opacity-50"
+                  className="rounded-2xl bg-white px-4 py-3 text-sm text-neutral-500 disabled:opacity-50"
                   title="Eigene Kopie bearbeiten"
                 >
                   {forkingId === t.id ? '…' : '✎'}

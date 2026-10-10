@@ -88,7 +88,7 @@ export default function ProgressCharts() {
               <XAxis dataKey="date" tick={{ fontSize: 11 }} />
               <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} />
               <Tooltip />
-              <Line type="monotone" dataKey="Schmerz" stroke="#dc2626" strokeWidth={2} />
+              <Line type="monotone" dataKey="Schmerz" stroke="#B44A22" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -101,7 +101,7 @@ export default function ProgressCharts() {
             <select
               value={selectedExerciseId}
               onChange={(e) => setSelectedExerciseId(e.target.value)}
-              className="rounded-lg border border-neutral-300 px-2 py-1 text-sm"
+              className="rounded-lg border border-neutral-300 px-2 py-1 text-sm bg-white"
             >
               {exerciseOptions.map(([id, name]) => (
                 <option key={id} value={id}>
@@ -117,7 +117,7 @@ export default function ProgressCharts() {
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Line type="monotone" dataKey="Max. Gewicht (kg)" stroke="#171717" strokeWidth={2} />
+                <Line type="monotone" dataKey="Max. Gewicht (kg)" stroke="#2E6A55" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </div>

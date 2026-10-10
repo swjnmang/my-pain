@@ -49,7 +49,7 @@ export default function ColumnsEditor({ columns, onChange }: Props) {
           + Spalte hinzufügen
         </button>
       ) : (
-        <div className="mt-2 rounded-lg border border-neutral-200 p-3">
+        <div className="mt-2 rounded-lg border border-neutral-200 p-3 bg-white">
           <p className="mb-2 text-xs font-medium text-neutral-500">Einheit wählen</p>
           <div className="mb-2 flex flex-wrap gap-2">
             {UNIT_ORDER.map((unit) => (
@@ -66,7 +66,7 @@ export default function ColumnsEditor({ columns, onChange }: Props) {
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             placeholder="Eigene Bezeichnung (optional)"
-            className="mb-2 w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
+            className="mb-2 w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm bg-white"
           />
           <button
             onClick={() => {

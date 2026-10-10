@@ -87,7 +87,7 @@ export default function SwipeToDelete({ children, onDelete }: Props) {
   const revealProgress = Math.min(1, Math.abs(translateX) / (ACTION_WIDTH * 0.6));
 
   return (
-    <div className="relative overflow-hidden rounded-lg">
+    <div className="relative overflow-hidden rounded-2xl">
       <div className="absolute inset-y-0 right-0 flex items-stretch" style={{ width: ACTION_WIDTH }}>
         <button
           onClick={handleDelete}

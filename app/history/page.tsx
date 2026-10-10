@@ -58,7 +58,7 @@ function HistoryInner() {
           const open = openId === s.id;
           return (
             <SwipeToDelete key={s.id} onDelete={() => handleDeleteSession(s.id)}>
-              <div className="rounded-lg border border-neutral-200">
+              <div className="rounded-2xl bg-white">
                 <button
                   onClick={() => setOpenId(open ? null : s.id)}
                   className="flex w-full items-center justify-between px-4 py-3 text-left"
@@ -70,14 +70,14 @@ function HistoryInner() {
                       {s.durationSec !== undefined ? ` · ${formatDuration(s.durationSec)}` : ''}
                     </p>
                   </div>
-                  <span className="text-sm text-neutral-500">Schmerz {s.preSurvey.painLevel}/10</span>
+                  <span className="shrink-0 rounded-full bg-pain-soft px-2.5 py-1 text-xs font-semibold text-pain">Schmerz {s.preSurvey.painLevel}/10</span>
                 </button>
 
                 {open && (
-                  <div className="border-t border-neutral-200 px-4 py-3 text-sm">
+                  <div className="border-t border-neutral-100 px-4 py-3 text-sm">
                     <Link
                       href={`/session/new?sessionId=${s.id}`}
-                      className="mb-3 inline-block rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium"
+                      className="mb-3 inline-block rounded-xl bg-accent-soft px-3.5 py-2 text-sm font-semibold text-accent-dark"
                     >
                       Training fortsetzen/bearbeiten
                     </Link>

@@ -312,7 +312,7 @@ function CalendarInner() {
                 }}
                 className={clsx(
                   'flex-1 rounded-full px-3 py-1.5 text-sm',
-                  viewMode === mode ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'
+                  viewMode === mode ? 'bg-accent text-white' : 'bg-neutral-100 text-neutral-600'
                 )}
               >
                 {mode === 'list' ? 'Liste' : mode === 'week' ? 'Woche' : 'Monat'}
@@ -357,14 +357,14 @@ function CalendarInner() {
                       onClick={() => setSelectedKey(cell.key)}
                       className={clsx(
                         'flex aspect-square flex-col items-center justify-center rounded-lg text-sm',
-                        isSelected ? 'bg-neutral-900 text-white' : 'hover:bg-neutral-100',
+                        isSelected ? 'bg-accent text-white' : 'hover:bg-neutral-100',
                         isToday && !isSelected && 'border border-neutral-900'
                       )}
                     >
                       <span>{cell.day}</span>
                       <span className="mt-0.5 flex gap-0.5">
-                        {hasSession && <span className="h-1.5 w-1.5 rounded-full bg-green-500" />}
-                        {hasPlan && <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />}
+                        {hasSession && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
+                        {hasPlan && <span className="h-1.5 w-1.5 rounded-full bg-neutral-400" />}
                       </span>
                     </button>
                   );
@@ -381,7 +381,7 @@ function CalendarInner() {
                   onClick={() => setSelectedKey(item.key)}
                   className={clsx(
                     'flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left',
-                    item.key === selectedKey ? 'border-neutral-900 bg-neutral-50' : 'border-neutral-200'
+                    item.key === selectedKey ? 'border-accent bg-accent-soft' : 'border-neutral-200 bg-white'
                   )}
                 >
                   <div>
@@ -390,7 +390,7 @@ function CalendarInner() {
                       {item.key} · {CATEGORY_LABELS[item.category]}
                     </p>
                   </div>
-                  <span className={clsx('h-2 w-2 rounded-full', item.status === 'done' ? 'bg-green-500' : 'bg-blue-500')} />
+                  <span className={clsx('h-2 w-2 rounded-full', item.status === 'done' ? 'bg-accent' : 'bg-neutral-400')} />
                 </button>
               ))}
               {listItems.length === 0 && <p className="text-sm text-neutral-400">Noch keine Trainings.</p>}
@@ -398,7 +398,7 @@ function CalendarInner() {
           )}
 
           {selectedKey && (
-            <div className="rounded-lg border border-neutral-200 p-4">
+            <div className="rounded-2xl bg-white p-4">
               <p className="mb-3 font-medium">{selectedKey}</p>
 
               {selectedSessions.length > 0 && (
@@ -407,7 +407,7 @@ function CalendarInner() {
                     <div key={s.id} className="flex items-center gap-2">
                       <Link
                         href={`/session/edit/${s.id}`}
-                        className="block flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+                        className="block flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-sm bg-white"
                       >
                         <p className="font-medium">{s.sourceName}</p>
                         <p className="text-neutral-500">
@@ -417,7 +417,7 @@ function CalendarInner() {
                       <button
                         onClick={() => handleDeleteSession(s.id)}
                         disabled={busy}
-                        className="rounded-lg border border-neutral-200 px-3 py-2 text-sm text-red-600"
+                        className="rounded-lg border border-neutral-200 px-3 py-2 text-sm text-red-600 bg-white"
                         title="Training löschen"
                       >
                         ×
@@ -428,7 +428,7 @@ function CalendarInner() {
               )}
 
               {selectedPlan && (
-                <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+                <div className="mb-4 rounded-xl bg-accent-soft px-3 py-2">
                   <p className="font-medium">{selectedPlan.sourceName}</p>
                   <p className="mb-2 text-sm text-neutral-500">{CATEGORY_LABELS[selectedPlan.category]} · geplant</p>
                   <div className="flex flex-wrap gap-2">
@@ -444,21 +444,21 @@ function CalendarInner() {
                         setMoveDate(selectedPlan.date);
                       }}
                       disabled={busy}
-                      className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
+                      className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm bg-white"
                     >
                       Verschieben
                     </button>
                     <button
                       onClick={() => handleEditPlan(selectedPlan)}
                       disabled={busy}
-                      className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
+                      className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm bg-white"
                     >
                       Bearbeiten
                     </button>
                     <button
                       onClick={() => handleDeletePlan(selectedPlan.id)}
                       disabled={busy}
-                      className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
+                      className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm bg-white"
                     >
                       Löschen
                     </button>
@@ -470,7 +470,7 @@ function CalendarInner() {
                         type="date"
                         value={moveDate}
                         onChange={(e) => setMoveDate(e.target.value)}
-                        className="rounded-lg border border-neutral-300 px-2 py-1 text-sm"
+                        className="rounded-lg border border-neutral-300 px-2 py-1 text-sm bg-white"
                       />
                       <button
                         onClick={() => handleMovePlan(selectedPlan.id)}
@@ -511,7 +511,7 @@ function CalendarInner() {
                             onClick={() => setRepeatMode(mode)}
                             className={clsx(
                               'rounded-full px-2 py-1 text-xs',
-                              repeatMode === mode ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'
+                              repeatMode === mode ? 'bg-accent text-white' : 'bg-neutral-100 text-neutral-600'
                             )}
                           >
                             {label}
@@ -525,7 +525,7 @@ function CalendarInner() {
                             min={1}
                             value={customDays}
                             onChange={(e) => setCustomDays(Math.max(1, Number(e.target.value)))}
-                            className="w-20 rounded-lg border border-neutral-300 px-2 py-1 text-sm"
+                            className="w-20 rounded-lg border border-neutral-300 px-2 py-1 text-sm bg-white"
                           />
                           <span className="text-sm text-neutral-500">Tage Rhythmus</span>
                         </div>
@@ -545,7 +545,7 @@ function CalendarInner() {
                         onClick={() => setPickerCategory(c)}
                         className={clsx(
                           'flex-1 rounded-full px-2 py-1 text-xs',
-                          pickerCategory === c ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'
+                          pickerCategory === c ? 'bg-accent text-white' : 'bg-neutral-100 text-neutral-600'
                         )}
                       >
                         {CATEGORY_LABELS[c]}
@@ -560,14 +560,14 @@ function CalendarInner() {
                           <button
                             disabled={busy}
                             onClick={() => handlePlan(w, 'workout')}
-                            className="block flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-left text-sm"
+                            className="block flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-left text-sm bg-white"
                           >
                             {w.name}
                           </button>
                         ) : (
                           <Link
                             href={`/session/new?type=workout&id=${w.id}&date=${selectedKey}`}
-                            className="block flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+                            className="block flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-sm bg-white"
                           >
                             {w.name}
                           </Link>
@@ -577,14 +577,14 @@ function CalendarInner() {
                             disabled={busy}
                             onClick={() => handlePlan(w, 'workout')}
                             title="Nur für heute planen, ohne sofort zu starten"
-                            className="whitespace-nowrap rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+                            className="whitespace-nowrap rounded-lg border border-neutral-200 px-3 py-2 text-sm bg-white"
                           >
                             Nur planen
                           </button>
                         )}
                         <Link
                           href={`/training/edit/${w.id}`}
-                          className="rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+                          className="rounded-lg border border-neutral-200 px-3 py-2 text-sm bg-white"
                           title="Training bearbeiten"
                         >
                           ✎
@@ -597,14 +597,14 @@ function CalendarInner() {
                           <button
                             disabled={busy}
                             onClick={() => handlePlan(t, 'template')}
-                            className="block flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-left text-sm"
+                            className="block flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-left text-sm bg-white"
                           >
                             {t.name}
                           </button>
                         ) : (
                           <Link
                             href={`/session/new?type=template&id=${t.id}&date=${selectedKey}`}
-                            className="block flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+                            className="block flex-1 rounded-lg border border-neutral-200 px-3 py-2 text-sm bg-white"
                           >
                             {t.name}
                           </Link>
@@ -614,7 +614,7 @@ function CalendarInner() {
                             disabled={busy}
                             onClick={() => handlePlan(t, 'template')}
                             title="Nur für heute planen, ohne sofort zu starten"
-                            className="whitespace-nowrap rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+                            className="whitespace-nowrap rounded-lg border border-neutral-200 px-3 py-2 text-sm bg-white"
                           >
                             Nur planen
                           </button>

@@ -149,7 +149,7 @@ function BuilderInner() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="z.B. Mein Oberkörper-Training"
-          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-base"
+          className="w-full rounded-xl border border-neutral-300 bg-white px-3.5 py-3 text-base focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
         />
       </div>
 
@@ -163,7 +163,7 @@ function BuilderInner() {
             }}
             className={clsx(
               'flex-1 rounded-full px-3 py-1.5 text-sm',
-              category === c ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'
+              category === c ? 'bg-accent text-white' : 'bg-neutral-100 text-neutral-600'
             )}
           >
             {CATEGORY_LABELS[c]}
@@ -176,7 +176,7 @@ function BuilderInner() {
 
       <Link
         href="/exercises/new"
-        className="mb-4 block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-neutral-600"
+        className="mb-4 block rounded-lg border border-dashed border-neutral-300 px-4 py-3 text-center text-sm font-medium text-accent"
       >
         + Eigene Übung anlegen
       </Link>
@@ -184,32 +184,32 @@ function BuilderInner() {
       <div className="mb-4 space-y-4">
         <p className="text-sm font-medium">Blöcke</p>
         {blocks.map((block, bi) => (
-          <div key={block.id} className="rounded-lg border border-neutral-200 p-3">
+          <div key={block.id} className="rounded-lg border border-neutral-200 p-3 bg-white">
             <div className="mb-2 flex items-center gap-2">
               <input
                 value={block.name}
                 onChange={(e) => renameBlock(block.id, e.target.value)}
                 placeholder={defaultBlockName(bi)}
-                className="flex-1 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm font-medium"
+                className="flex-1 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm font-medium bg-white"
               />
               <button
                 onClick={() => moveBlock(block.id, 'up')}
                 disabled={bi === 0}
-                className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-30"
+                className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-30 bg-white"
               >
                 ▲
               </button>
               <button
                 onClick={() => moveBlock(block.id, 'down')}
                 disabled={bi === blocks.length - 1}
-                className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-30"
+                className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-30 bg-white"
               >
                 ▼
               </button>
               <button
                 onClick={() => removeBlock(block.id)}
                 disabled={blocks.length <= 1}
-                className="rounded-lg border border-neutral-200 px-2 py-1 text-xs text-red-600 disabled:opacity-30"
+                className="rounded-lg border border-neutral-200 px-2 py-1 text-xs text-red-600 disabled:opacity-30 bg-white"
                 title="Block entfernen"
               >
                 ✕
@@ -225,13 +225,13 @@ function BuilderInner() {
                   return (
                     <div
                       key={id}
-                      className="flex items-center gap-2 rounded-lg border border-neutral-900 bg-neutral-50 px-3 py-2"
+                      className="flex items-center gap-2 rounded-lg border border-accent bg-accent-soft px-3 py-2"
                     >
                       <span className="flex-1 text-sm">{ex?.name ?? id}</span>
                       <select
                         value={block.id}
                         onChange={(e) => reassignExerciseBlock(id, e.target.value)}
-                        className="rounded-lg border border-neutral-300 px-1 py-1 text-xs"
+                        className="rounded-lg border border-neutral-300 px-1 py-1 text-xs bg-white"
                       >
                         {blocks.map((b2, i2) => (
                           <option key={b2.id} value={b2.id}>
@@ -242,20 +242,20 @@ function BuilderInner() {
                       <button
                         onClick={() => moveExerciseWithinBlock(block.id, id, 'up')}
                         disabled={i === 0}
-                        className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-30"
+                        className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-30 bg-white"
                       >
                         ▲
                       </button>
                       <button
                         onClick={() => moveExerciseWithinBlock(block.id, id, 'down')}
                         disabled={i === block.exerciseIds.length - 1}
-                        className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-30"
+                        className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-30 bg-white"
                       >
                         ▼
                       </button>
                       <button
                         onClick={() => removeExerciseFromTraining(id)}
-                        className="rounded-lg border border-neutral-200 px-2 py-1 text-xs text-red-600"
+                        className="rounded-lg border border-neutral-200 px-2 py-1 text-xs text-red-600 bg-white"
                       >
                         ✕
                       </button>
@@ -268,7 +268,7 @@ function BuilderInner() {
         ))}
         <button
           onClick={addBlock}
-          className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-2 text-center text-sm font-medium text-neutral-600"
+          className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-2 text-center text-sm font-medium text-accent"
         >
           + Block hinzufügen
         </button>
@@ -281,7 +281,7 @@ function BuilderInner() {
               onClick={() => toggleExercise(ex.id)}
               className={clsx(
                 'flex flex-1 items-center justify-between rounded-lg border px-4 py-3 text-left',
-                selectedIds.has(ex.id) ? 'border-neutral-900 bg-neutral-50' : 'border-neutral-200'
+                selectedIds.has(ex.id) ? 'border-accent bg-accent-soft' : 'border-neutral-200 bg-white'
               )}
             >
               <span>{ex.name}</span>
@@ -290,7 +290,7 @@ function BuilderInner() {
             {ownExerciseIds.has(ex.id) && (
               <Link
                 href={`/exercises/${ex.id}/edit`}
-                className="rounded-lg border border-neutral-200 px-3 py-3 text-sm"
+                className="rounded-2xl bg-white px-4 py-3 text-sm text-neutral-500"
                 title="Übung bearbeiten"
               >
                 ✎
@@ -300,11 +300,11 @@ function BuilderInner() {
         ))}
       </div>
 
-      <div className="fixed inset-x-0 bottom-16 border-t border-neutral-200 bg-white p-4">
+      <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 border-t border-neutral-200 bg-white/95 p-4 backdrop-blur">
         <button
           onClick={handleSave}
           disabled={saving || !name.trim() || totalSelected === 0}
-          className="w-full rounded-lg bg-neutral-900 px-4 py-2.5 text-base font-medium text-white disabled:opacity-50"
+          className="w-full rounded-xl bg-neutral-900 px-4 py-3.5 text-base font-semibold text-white disabled:opacity-50"
         >
           {saving ? 'Speichert…' : `Training speichern (${totalSelected} Übungen)`}
         </button>

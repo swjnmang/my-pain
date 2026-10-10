@@ -155,7 +155,7 @@ export default function ExerciseTimerRunner({ timer, sets, onSetsChange, onActiv
       <button
         onClick={start}
         disabled={allDone}
-        className="mt-2 flex items-center gap-1.5 rounded-full bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-30"
+        className="mt-2 flex items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-30"
         title={allDone ? 'Alle Sätze erledigt' : 'Timer starten'}
       >
         <span>▶</span>
@@ -183,17 +183,17 @@ export default function ExerciseTimerRunner({ timer, sets, onSetsChange, onActiv
             ensureAudioContext();
             setPaused((p) => !p);
           }}
-          className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
+          className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm bg-white"
         >
           {paused ? 'Weiter' : 'Pause'}
         </button>
         <button
           onClick={() => setRemaining(0)}
-          className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
+          className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm bg-white"
         >
           Überspringen
         </button>
-        <button onClick={stop} className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-red-600">
+        <button onClick={stop} className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-red-600 bg-white">
           Stopp
         </button>
       </div>
